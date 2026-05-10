@@ -145,6 +145,26 @@ async function switchToSepolia() {
   }
 }
 
+function getInjectedProvider() {
+  if (!window.ethereum) {
+    throw new Error("No wallet found");
+  }
+
+  if (window.ethereum.providers?.length) {
+    const metamask = window.ethereum.providers.find(
+      (p: any) => p.isMetaMask
+    );
+
+    if (metamask) {
+      return metamask;
+    }
+
+    return window.ethereum.providers[0];
+  }
+
+  return window.ethereum;
+}
+
 async function connectWallet() {
   if (!window.ethereum) {
     alert("No EVM wallet detected.");
@@ -153,17 +173,9 @@ async function connectWallet() {
 
   await switchToSepolia();
 
-  const injectedProvider = window.ethereum;
+  const injectedProvider = getInjectedProvider();
 
-  if (!injectedProvider) {
-    throw new Error("No wallet found");
-  }
-
-  await injectedProvider.request({
-    method: "eth_requestAccounts",
-  });
-
-    const provider = new ethers.BrowserProvider(injectedProvider);
+  const provider = new ethers.BrowserProvider(injectedProvider);
   await provider.send("eth_requestAccounts", []);
 
   signer = await provider.getSigner();
