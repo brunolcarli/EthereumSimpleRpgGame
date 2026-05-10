@@ -11,14 +11,14 @@ This project allows players to connect their wallet, register characters, battle
 ## Sepolia Contract Address
 
 ```txt
-0xeCb298f067823ad31414718f63aaFe436943232C
+0x7E68EF63Ea7Fd44691402002bFD3e28E420cf6F1
 ```
 
 Solidity smart contract source code: https://github.com/brunolcarli/simpleRPG
 
 ## Etherscan
 
-https://sepolia.etherscan.io/address/0xeCb298f067823ad31414718f63aaFe436943232C
+https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
 
 ---
 
