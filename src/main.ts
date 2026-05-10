@@ -153,7 +153,17 @@ async function connectWallet() {
 
   await switchToSepolia();
 
-  provider = new ethers.BrowserProvider(window.ethereum);
+  const injectedProvider = window.ethereum;
+
+  if (!injectedProvider) {
+    throw new Error("No wallet found");
+  }
+
+  await injectedProvider.request({
+    method: "eth_requestAccounts",
+  });
+
+    const provider = new ethers.BrowserProvider(injectedProvider);
   await provider.send("eth_requestAccounts", []);
 
   signer = await provider.getSigner();
