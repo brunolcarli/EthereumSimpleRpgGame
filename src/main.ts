@@ -166,24 +166,53 @@ function getInjectedProvider() {
 }
 
 async function connectWallet() {
-  if (!window.ethereum) {
-    alert("No EVM wallet detected.");
-    return;
+  try {
+    const injectedProvider = getInjectedProvider();
+
+    const provider = new ethers.BrowserProvider(injectedProvider);
+
+    await provider.send("eth_requestAccounts", []);
+
+    try {
+      await provider.send("wallet_switchEthereumChain", [
+        { chainId: "0xaa36a7" }
+      ]);
+    } catch (switchError: any) {
+      if (switchError.code === 4902) {
+        await provider.send("wallet_addEthereumChain", [
+          {
+            chainId: "0xaa36a7",
+            chainName: "Sepolia",
+            nativeCurrency: {
+              name: "Sepolia ETH",
+              symbol: "ETH",
+              decimals: 18,
+            },
+            rpcUrls: ["https://rpc.sepolia.org"],
+            blockExplorerUrls: ["https://sepolia.etherscan.io"],
+          },
+        ]);
+      }
+    }
+
+    signer = await provider.getSigner();
+
+    const address = await signer.getAddress();
+
+    connectedAddress = address;
+
+    contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      signer
+    );
+
+    document.querySelector("#walletStatus")!.textContent =
+      `Connected: ${address}`;
+
+  } catch (error) {
+    console.error(error);
   }
-
-  await switchToSepolia();
-
-  const injectedProvider = getInjectedProvider();
-
-  const provider = new ethers.BrowserProvider(injectedProvider);
-  await provider.send("eth_requestAccounts", []);
-
-  signer = await provider.getSigner();
-  connectedAddress = await signer.getAddress();
-
-  contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-  document.querySelector("#walletStatus")!.textContent = `Connected: ${connectedAddress}`;
 }
 
 function formatPlayer(player: any) {
