@@ -155,32 +155,45 @@ function requireContract() {
 }
 
 function getInjectedProvider() {
-  if (!window.ethereum) {
+  const ethereum = window.ethereum;
+
+  if (!ethereum) {
     throw new Error("No wallet found");
   }
 
-  if (window.ethereum.providers?.length) {
-    const okx = window.ethereum.providers.find(
-      (p: any) => p.isOkxWallet || p.isOKExWallet
+  // Multiple wallets installed
+  if (ethereum.providers && Array.isArray(ethereum.providers)) {
+
+    console.log("Detected providers:", ethereum.providers);
+
+    // Force OKX Wallet
+    const okxProvider = ethereum.providers.find(
+      (provider: any) =>
+        provider.isOkxWallet ||
+        provider.isOKExWallet
     );
 
-    if (okx) {
-      return okx;
+    if (okxProvider) {
+      console.log("Using OKX Wallet");
+      return okxProvider;
     }
 
-    const metamask = window.ethereum.providers.find(
-      (p: any) => p.isMetaMask
-    );
-
-    if (metamask) {
-      return metamask;
-    }
-
-    return window.ethereum.providers[0];
+    throw new Error("OKX Wallet not found.");
   }
 
-  return window.ethereum;
+  // Single provider case
+  if (
+    ethereum.isOkxWallet ||
+    ethereum.isOKExWallet
+  ) {
+    return ethereum;
+  }
+
+  throw new Error(
+    "OKX Wallet is not the active provider."
+  );
 }
+
 
 async function connectWallet() {
   try {
