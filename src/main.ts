@@ -561,7 +561,6 @@ async function battle() {
     output.textContent = "⏳ Waiting transaction confirmation...\n";
 
     const pricePerRound = await c.pricePerRound();
-
     const battleCost = pricePerRound * BigInt(rounds);
 
     const tx = await c.battle(enemyId, rounds, {
@@ -570,15 +569,32 @@ async function battle() {
 
     output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
 
-    const receipt = await tx.wait();
+    await tx.wait();
 
-    output.textContent += `✅ Battle confirmed!\n\n`;
+    output.textContent += "✅ Battle confirmed!\n\n";
+
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const receipt = await readProvider.getTransactionReceipt(tx.hash);
+
+    if (!receipt) {
+      output.textContent += "Could not load transaction receipt.";
+      return;
+    }
+
+    const iface = new ethers.Interface(CONTRACT_ABI);
 
     const battleLogs: string[] = [];
 
     for (const log of receipt.logs) {
       try {
-        const parsed = c.interface.parseLog(log);
+        if (log.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
+          continue;
+        }
+
+        const parsed = iface.parseLog({
+          topics: log.topics,
+          data: log.data,
+        });
 
         if (!parsed) continue;
 
@@ -591,8 +607,8 @@ async function battle() {
             `⚔️ Round ${round}\n${message} ${value}\n`
           );
         }
-      } catch {
-        // Ignore unrelated logs
+      } catch (err) {
+        console.error("Battle log parse error:", err);
       }
     }
 
@@ -606,6 +622,7 @@ async function battle() {
     alert(error.message);
   }
 }
+
 
 async function revive() {
   try {
