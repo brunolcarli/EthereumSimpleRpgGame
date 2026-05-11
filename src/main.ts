@@ -21,6 +21,8 @@ let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
 
+const READ_RPC = "https://rpc.sepolia.org";
+
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
@@ -30,15 +32,24 @@ app.innerHTML = `
 
     <section class="card">
       <h2>Wallet</h2>
-      <button id="connectWallet">Connect Wallet</button>
-      <p id="walletStatus">Not connected</p>
+
+      <button id="connectWallet">
+        Connect Wallet
+      </button>
+
+      <p id="walletStatus">
+        Not connected
+      </p>
     </section>
 
     <section class="grid">
       <div class="card">
         <h2>Register Player</h2>
 
-        <input id="playerName" placeholder="Player name" />
+        <input
+          id="playerName"
+          placeholder="Player name"
+        />
 
         <select id="classId">
           <option value="1">Warrior</option>
@@ -58,7 +69,10 @@ app.innerHTML = `
           Load My Character
         </button>
 
-        <div id="myPlayerOutput" class="player-card"></div>
+        <div
+          id="myPlayerOutput"
+          class="player-card"
+        ></div>
       </div>
     </section>
 
@@ -69,7 +83,10 @@ app.innerHTML = `
         Load Enemies
       </button>
 
-      <div id="enemiesOutput" class="enemy-list"></div>
+      <div
+        id="enemiesOutput"
+        class="enemy-list"
+      ></div>
     </section>
 
     <section class="card">
@@ -141,7 +158,10 @@ app.innerHTML = `
           Search
         </button>
 
-        <div id="searchOutput" class="player-card"></div>
+        <div
+          id="searchOutput"
+          class="player-card"
+        ></div>
       </div>
     </section>
   </main>
@@ -149,7 +169,9 @@ app.innerHTML = `
 
 function requireContract() {
   if (!contract || !signer || !connectedAddress) {
-    throw new Error("Connect your wallet first.");
+    throw new Error(
+      "Connect your wallet first."
+    );
   }
 
   return contract;
@@ -158,15 +180,19 @@ function requireContract() {
 function getInjectedProvider() {
   const win = window as any;
 
-  // OKX sometimes injects here
   if (win.okxwallet) {
-    console.log("Using OKX from window.okxwallet");
+    console.log(
+      "Using OKX from window.okxwallet"
+    );
+
     return win.okxwallet;
   }
 
-  // Some versions inject here
   if (win.okxwallet?.ethereum) {
-    console.log("Using OKX from window.okxwallet.ethereum");
+    console.log(
+      "Using OKX from window.okxwallet.ethereum"
+    );
+
     return win.okxwallet.ethereum;
   }
 
@@ -176,9 +202,13 @@ function getInjectedProvider() {
     throw new Error("No wallet found");
   }
 
-  const providers = ethereum.providers || [ethereum];
+  const providers =
+    ethereum.providers || [ethereum];
 
-  console.log("Detected providers:", providers);
+  console.log(
+    "Detected providers:",
+    providers
+  );
 
   const okxProvider = providers.find(
     (provider: any) =>
@@ -189,22 +219,32 @@ function getInjectedProvider() {
   );
 
   if (okxProvider) {
-    console.log("Using OKX from ethereum providers");
+    console.log(
+      "Using OKX from ethereum providers"
+    );
+
     return okxProvider;
   }
 
-  throw new Error("OKX Wallet not found. Check if the OKX extension is installed and enabled for this site.");
+  throw new Error(
+    "OKX Wallet not found."
+  );
 }
 
 async function connectWallet() {
   try {
-    const injectedProvider = getInjectedProvider();
+    const injectedProvider =
+      getInjectedProvider();
 
-    const provider = new ethers.BrowserProvider(
-      injectedProvider
+    const provider =
+      new ethers.BrowserProvider(
+        injectedProvider
+      );
+
+    await provider.send(
+      "eth_requestAccounts",
+      []
     );
-
-    await provider.send("eth_requestAccounts", []);
 
     try {
       await provider.send(
@@ -217,14 +257,17 @@ async function connectWallet() {
           "wallet_addEthereumChain",
           [
             {
-              chainId: SEPOLIA_CHAIN_ID,
+              chainId:
+                SEPOLIA_CHAIN_ID,
               chainName: "Sepolia",
               nativeCurrency: {
                 name: "Sepolia ETH",
                 symbol: "ETH",
                 decimals: 18,
               },
-              rpcUrls: ["https://rpc.sepolia.org"],
+              rpcUrls: [
+                "https://rpc.sepolia.org",
+              ],
               blockExplorerUrls: [
                 "https://sepolia.etherscan.io",
               ],
@@ -236,7 +279,8 @@ async function connectWallet() {
 
     signer = await provider.getSigner();
 
-    connectedAddress = await signer.getAddress();
+    connectedAddress =
+      await signer.getAddress();
 
     contract = new ethers.Contract(
       CONTRACT_ADDRESS,
@@ -244,8 +288,10 @@ async function connectWallet() {
       signer
     );
 
-    document.querySelector("#walletStatus")!.textContent =
-    `Connected: ${connectedAddress} | Contract: ${CONTRACT_ADDRESS}`;
+    document.querySelector(
+      "#walletStatus"
+    )!.textContent =
+      `Connected: ${connectedAddress} | Contract: ${CONTRACT_ADDRESS}`;
   } catch (error) {
     console.error(error);
   }
@@ -270,14 +316,14 @@ function formatPlayer(player: any) {
 
 function formatEnemy(enemy: any) {
   return {
-    id: enemy.id.toString(),
-    name: enemy.name,
-    hp: enemy.hp.toString(),
-    atk: enemy.atk.toString(),
-    def: enemy.def.toString(),
-    magic: enemy.magic.toString(),
-    isAlive: enemy.isAlive,
-    exp: enemy.exp.toString(),
+    id: enemy[0].toString(),
+    name: enemy[1],
+    hp: enemy[2].toString(),
+    atk: enemy[3].toString(),
+    def: enemy[4].toString(),
+    magic: enemy[5].toString(),
+    isAlive: enemy[6],
+    exp: enemy[7].toString(),
   };
 }
 
@@ -301,36 +347,56 @@ async function registerPlayer() {
       return;
     }
 
-    const tx = await c.registerPlayer(
-      name,
-      classId,
-      {
-        value: ethers.parseEther(
-          REGISTER_PRICE
-        ),
-      }
-    );
+    const tx =
+      await c.registerPlayer(
+        name,
+        classId,
+        {
+          value: ethers.parseEther(
+            REGISTER_PRICE
+          ),
+        }
+      );
 
     await tx.wait();
 
     alert("Player registered!");
 
     await loadMyPlayer();
-
   } catch (error: any) {
+    console.error(error);
     alert(error.message);
   }
 }
 
 async function loadMyPlayer() {
   try {
-    const c = requireContract();
+    if (!connectedAddress) {
+      throw new Error(
+        "Connect your wallet first."
+      );
+    }
 
-    console.log("Loading player from wallet:", connectedAddress);
-    console.log("Contract address:", CONTRACT_ADDRESS);
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        READ_RPC
+      );
 
-    const player = await c.players(
-      connectedAddress
+    const readContract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        readProvider
+      );
+
+    const player =
+      await readContract.players(
+        connectedAddress
+      );
+
+    console.log(
+      "Raw player result:",
+      player
     );
 
     const data = formatPlayer(player);
@@ -351,34 +417,56 @@ async function loadMyPlayer() {
       <h3>${data.name || "Unnamed Player"}</h3>
 
       <p>${classEmoji} <strong>Class:</strong> ${data.class}</p>
+
       <p>⭐ <strong>Level:</strong> ${data.level}</p>
+
       <p>📈 <strong>EXP:</strong> ${data.exp} / ${data.nextLevel}</p>
 
       <hr />
 
       <p>❤️ <strong>HP:</strong> ${data.currentHp} / ${data.maxHp}</p>
+
       <p>⚔️ <strong>ATK:</strong> ${data.atk}</p>
+
       <p>🛡️ <strong>DEF:</strong> ${data.def}</p>
+
       <p>🪄 <strong>MAGIC:</strong> ${data.magic}</p>
 
       <hr />
 
-      <p><strong>Status:</strong> ${
-        data.isAlive
-          ? "🟢 Alive"
-          : "🔴 Dead"
-      }</p>
+      <p>
+        <strong>Status:</strong>
+        ${
+          data.isAlive
+            ? "🟢 Alive"
+            : "🔴 Dead"
+        }
+      </p>
 
-      <p><strong>Wallet:</strong> ${connectedAddress}</p>
+      <p>
+        <strong>Wallet:</strong>
+        ${connectedAddress}
+      </p>
     `;
   } catch (error: any) {
+    console.error(error);
     alert(error.message);
   }
 }
 
 async function loadEnemies() {
   try {
-    const c = requireContract();
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        READ_RPC
+      );
+
+    const readContract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        readProvider
+      );
 
     const enemyEmojiMap: Record<
       string,
@@ -401,18 +489,25 @@ async function loadEnemies() {
     container.innerHTML = "";
 
     for (let i = 1; i <= 7; i++) {
-      const enemy = await c.enemies(i);
+      const enemy =
+        await readContract.enemies(i);
 
-      const data = formatEnemy(enemy);
+      const data =
+        formatEnemy(enemy);
 
       const div =
-        document.createElement("div");
+        document.createElement(
+          "div"
+        );
 
       div.className = "enemy-card";
 
       div.innerHTML = `
         <h3>
-          ${enemyEmojiMap[data.name] || "👾"}
+          ${
+            enemyEmojiMap[data.name] ||
+            "👾"
+          }
           ${data.name}
         </h3>
 
@@ -426,6 +521,7 @@ async function loadEnemies() {
       container.appendChild(div);
     }
   } catch (error: any) {
+    console.error(error);
     alert(error.message);
   }
 }
@@ -476,7 +572,8 @@ async function battle() {
       await c.pricePerRound();
 
     const battleCost =
-      pricePerRound * BigInt(rounds);
+      pricePerRound *
+      BigInt(rounds);
 
     const tx = await c.battle(
       enemyId,
@@ -489,22 +586,27 @@ async function battle() {
     output.textContent +=
       `📦 TX Sent: ${tx.hash}\n\n`;
 
-    const receipt = await tx.wait();
+    const receipt =
+      await tx.wait();
 
     output.textContent +=
       "✅ Battle confirmed!\n\n";
 
-    const battleLogs: string[] = [];
+    const battleLogs: string[] =
+      [];
 
     for (const log of receipt.logs) {
       try {
         const parsed =
-          c.interface.parseLog(log);
+          c.interface.parseLog(
+            log
+          );
 
         if (!parsed) continue;
 
         if (
-          parsed.name === "battleLog"
+          parsed.name ===
+          "battleLog"
         ) {
           const round =
             parsed.args.round;
@@ -520,11 +622,13 @@ async function battle() {
           );
         }
       } catch {
-        // ignore unrelated logs
+        //
       }
     }
 
-    if (battleLogs.length === 0) {
+    if (
+      battleLogs.length === 0
+    ) {
       output.textContent +=
         "No battle logs found.";
     } else {
@@ -548,16 +652,22 @@ async function revive() {
         "#reviveAddress"
       )!.value;
 
-    if (!ethers.isAddress(target)) {
+    if (
+      !ethers.isAddress(target)
+    ) {
       alert("Invalid address.");
       return;
     }
 
-    const tx = await c.revive(target, {
-      value: ethers.parseEther(
-        REVIVE_PRICE
-      ),
-    });
+    const tx = await c.revive(
+      target,
+      {
+        value:
+          ethers.parseEther(
+            REVIVE_PRICE
+          ),
+      }
+    );
 
     await tx.wait();
 
@@ -566,28 +676,44 @@ async function revive() {
     )!.textContent =
       `❤️ Revived: ${target}`;
   } catch (error: any) {
+    console.error(error);
     alert(error.message);
   }
 }
 
 async function searchPlayer() {
   try {
-    const c = requireContract();
-
     const address =
       document.querySelector<HTMLInputElement>(
         "#searchAddress"
       )!.value;
 
-    if (!ethers.isAddress(address)) {
+    if (
+      !ethers.isAddress(address)
+    ) {
       alert("Invalid address.");
       return;
     }
 
-    const player =
-      await c.players(address);
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        READ_RPC
+      );
 
-    const data = formatPlayer(player);
+    const readContract =
+      new ethers.Contract(
+        CONTRACT_ADDRESS,
+        CONTRACT_ABI,
+        readProvider
+      );
+
+    const player =
+      await readContract.players(
+        address
+      );
+
+    const data =
+      formatPlayer(player);
 
     const container =
       document.querySelector<HTMLDivElement>(
@@ -605,54 +731,74 @@ async function searchPlayer() {
       <h3>${data.name || "Unnamed Player"}</h3>
 
       <p>${classEmoji} <strong>Class:</strong> ${data.class}</p>
+
       <p>⭐ <strong>Level:</strong> ${data.level}</p>
+
       <p>📈 <strong>EXP:</strong> ${data.exp} / ${data.nextLevel}</p>
 
       <hr />
 
       <p>❤️ <strong>HP:</strong> ${data.currentHp} / ${data.maxHp}</p>
+
       <p>⚔️ <strong>ATK:</strong> ${data.atk}</p>
+
       <p>🛡️ <strong>DEF:</strong> ${data.def}</p>
+
       <p>🪄 <strong>MAGIC:</strong> ${data.magic}</p>
 
       <hr />
 
-      <p><strong>Status:</strong> ${
-        data.isAlive
-          ? "🟢 Alive"
-          : "🔴 Dead"
-      }</p>
+      <p>
+        <strong>Status:</strong>
+        ${
+          data.isAlive
+            ? "🟢 Alive"
+            : "🔴 Dead"
+        }
+      </p>
 
-      <p><strong>Wallet:</strong> ${address}</p>
+      <p>
+        <strong>Wallet:</strong>
+        ${address}
+      </p>
     `;
   } catch (error: any) {
+    console.error(error);
     alert(error.message);
   }
 }
 
 document
-  .querySelector("#connectWallet")!
+  .querySelector(
+    "#connectWallet"
+  )!
   .addEventListener(
     "click",
     connectWallet
   );
 
 document
-  .querySelector("#registerPlayer")!
+  .querySelector(
+    "#registerPlayer"
+  )!
   .addEventListener(
     "click",
     registerPlayer
   );
 
 document
-  .querySelector("#loadMyPlayer")!
+  .querySelector(
+    "#loadMyPlayer"
+  )!
   .addEventListener(
     "click",
     loadMyPlayer
   );
 
 document
-  .querySelector("#loadEnemies")!
+  .querySelector(
+    "#loadEnemies"
+  )!
   .addEventListener(
     "click",
     loadEnemies
@@ -673,14 +819,18 @@ document
   );
 
 document
-  .querySelector("#searchPlayer")!
+  .querySelector(
+    "#searchPlayer"
+  )!
   .addEventListener(
     "click",
     searchPlayer
   );
 
 document
-  .querySelector("#battleRounds")!
+  .querySelector(
+    "#battleRounds"
+  )!
   .addEventListener(
     "input",
     updateBattlePrice
@@ -690,24 +840,32 @@ document
   .querySelector(
     "#useMyAddressRevive"
   )!
-  .addEventListener("click", () => {
-    if (connectedAddress) {
-      document.querySelector<HTMLInputElement>(
-        "#reviveAddress"
-      )!.value = connectedAddress;
+  .addEventListener(
+    "click",
+    () => {
+      if (connectedAddress) {
+        document.querySelector<HTMLInputElement>(
+          "#reviveAddress"
+        )!.value =
+          connectedAddress;
+      }
     }
-  });
+  );
 
 document
   .querySelector(
     "#useMyAddressSearch"
   )!
-  .addEventListener("click", () => {
-    if (connectedAddress) {
-      document.querySelector<HTMLInputElement>(
-        "#searchAddress"
-      )!.value = connectedAddress;
+  .addEventListener(
+    "click",
+    () => {
+      if (connectedAddress) {
+        document.querySelector<HTMLInputElement>(
+          "#searchAddress"
+        )!.value =
+          connectedAddress;
+      }
     }
-  });
+  );
 
 updateBattlePrice();
