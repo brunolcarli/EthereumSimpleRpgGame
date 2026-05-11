@@ -544,6 +544,7 @@ function updateBattlePrice() {
     )} ETH`;
 }
 
+
 async function battle() {
   try {
     const c = requireContract();
@@ -558,7 +559,7 @@ async function battle() {
 
     const output = document.querySelector("#battleOutput")!;
 
-    output.textContent = "⏳ Waiting transaction confirmation...\n";
+    output.textContent = "⏳ Sending battle transaction...\n";
 
     const pricePerRound = await c.pricePerRound();
     const battleCost = pricePerRound * BigInt(rounds);
@@ -568,47 +569,51 @@ async function battle() {
     });
 
     output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
-
-    await tx.wait();
-
-    output.textContent += "✅ Battle confirmed!\n\n";
+    output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
 
     const readProvider = new ethers.JsonRpcProvider(READ_RPC);
-    const receipt = await readProvider.getTransactionReceipt(tx.hash);
+
+    const receipt = await readProvider.waitForTransaction(tx.hash, 1, 120000);
+
+    console.log("Receipt from public RPC:", receipt);
 
     if (!receipt) {
-      output.textContent += "Could not load transaction receipt.";
+      output.textContent += "❌ Transaction confirmation timeout.";
       return;
     }
+
+    output.textContent += "✅ Battle confirmed!\n\n";
 
     const iface = new ethers.Interface(CONTRACT_ABI);
 
     const battleLogs: string[] = [];
 
+    console.log("Receipt logs:", receipt.logs);
+
     for (const log of receipt.logs) {
       try {
-        if (log.address.toLowerCase() !== CONTRACT_ADDRESS.toLowerCase()) {
-          continue;
-        }
+        console.log("Raw log:", log);
 
         const parsed = iface.parseLog({
           topics: log.topics,
           data: log.data,
         });
 
-        if (!parsed) continue;
+        console.log("Parsed log:", parsed);
 
-        if (parsed.name === "battleLog") {
+        if (parsed?.name === "battleLog") {
           const round = parsed.args[0].toString();
           const message = parsed.args[1];
           const value = parsed.args[2].toString();
 
-          battleLogs.push(
-            `⚔️ Round ${round}\n${message} ${value}\n`
-          );
+          const line = `⚔️ Round ${round}\n${message} ${value}\n`;
+
+          console.log("Rendered battle log:", line);
+
+          battleLogs.push(line);
         }
       } catch (err) {
-        console.error("Battle log parse error:", err);
+        console.log("Ignored non-battle log:", err);
       }
     }
 
@@ -618,11 +623,10 @@ async function battle() {
 
     await loadMyPlayer();
   } catch (error: any) {
-    console.error(error);
+    console.error("Battle error:", error);
     alert(error.message);
   }
 }
-
 
 async function revive() {
   try {

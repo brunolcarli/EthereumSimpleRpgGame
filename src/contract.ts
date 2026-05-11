@@ -7,6 +7,32 @@ export const PRICE_PER_ROUND = "0.001";
 export const REVIVE_PRICE = "0.001";
 
 export const CONTRACT_ABI = [
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "uint8",
+        name: "round",
+        type: "uint8",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "message",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "value",
+        type: "uint256",
+      },
+    ],
+    name: "battleLog",
+    type: "event",
+  },
+
   "function registerPlayer(string _name, uint8 _classId) payable",
   "function battle(uint8 _enemyId, uint256 _battleRounds) payable",
   "function revive(address _player) payable",
@@ -18,6 +44,4 @@ export const CONTRACT_ABI = [
   "function registerPrice() view returns (uint256)",
   "function pricePerRound() view returns (uint256)",
   "function revivePrice() view returns (uint256)",
-
-  "event battleLog(uint8 round, string message, uint256 value)"
 ];
