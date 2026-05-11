@@ -160,6 +160,14 @@ function getInjectedProvider() {
   }
 
   if (window.ethereum.providers?.length) {
+    const okx = window.ethereum.providers.find(
+      (p: any) => p.isOkxWallet || p.isOKExWallet
+    );
+
+    if (okx) {
+      return okx;
+    }
+
     const metamask = window.ethereum.providers.find(
       (p: any) => p.isMetaMask
     );
