@@ -8,6 +8,9 @@ This project allows players to connect their wallet, register characters, battle
 
 # 🌐 Live Smart Contract
 
+Demo DApp on vercel: https://ethereum-simple-rpg-game.vercel.app/
+
+
 ## Sepolia Contract Address
 
 ```txt
