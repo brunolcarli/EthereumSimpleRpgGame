@@ -314,6 +314,9 @@ async function registerPlayer() {
     await tx.wait();
 
     alert("Player registered!");
+
+    await loadMyPlayer();
+
   } catch (error: any) {
     alert(error.message);
   }
