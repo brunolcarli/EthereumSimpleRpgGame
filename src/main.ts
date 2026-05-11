@@ -13,6 +13,7 @@ import "./style.css";
 declare global {
   interface Window {
     ethereum?: any;
+    okxwallet?: any;
   }
 }
 
@@ -155,45 +156,45 @@ function requireContract() {
 }
 
 function getInjectedProvider() {
-  const ethereum = window.ethereum;
+  const win = window as any;
+
+  // OKX sometimes injects here
+  if (win.okxwallet) {
+    console.log("Using OKX from window.okxwallet");
+    return win.okxwallet;
+  }
+
+  // Some versions inject here
+  if (win.okxwallet?.ethereum) {
+    console.log("Using OKX from window.okxwallet.ethereum");
+    return win.okxwallet.ethereum;
+  }
+
+  const ethereum = win.ethereum;
 
   if (!ethereum) {
     throw new Error("No wallet found");
   }
 
-  // Multiple wallets installed
-  if (ethereum.providers && Array.isArray(ethereum.providers)) {
+  const providers = ethereum.providers || [ethereum];
 
-    console.log("Detected providers:", ethereum.providers);
+  console.log("Detected providers:", providers);
 
-    // Force OKX Wallet
-    const okxProvider = ethereum.providers.find(
-      (provider: any) =>
-        provider.isOkxWallet ||
-        provider.isOKExWallet
-    );
-
-    if (okxProvider) {
-      console.log("Using OKX Wallet");
-      return okxProvider;
-    }
-
-    throw new Error("OKX Wallet not found.");
-  }
-
-  // Single provider case
-  if (
-    ethereum.isOkxWallet ||
-    ethereum.isOKExWallet
-  ) {
-    return ethereum;
-  }
-
-  throw new Error(
-    "OKX Wallet is not the active provider."
+  const okxProvider = providers.find(
+    (provider: any) =>
+      provider.isOkxWallet ||
+      provider.isOKExWallet ||
+      provider.isOkx ||
+      provider.isOKXWallet
   );
-}
 
+  if (okxProvider) {
+    console.log("Using OKX from ethereum providers");
+    return okxProvider;
+  }
+
+  throw new Error("OKX Wallet not found. Check if the OKX extension is installed and enabled for this site.");
+}
 
 async function connectWallet() {
   try {
