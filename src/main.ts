@@ -245,7 +245,7 @@ async function connectWallet() {
     );
 
     document.querySelector("#walletStatus")!.textContent =
-      `Connected: ${connectedAddress}`;
+    `Connected: ${connectedAddress} | Contract: ${CONTRACT_ADDRESS}`;
   } catch (error) {
     console.error(error);
   }
@@ -322,6 +322,9 @@ async function registerPlayer() {
 async function loadMyPlayer() {
   try {
     const c = requireContract();
+
+    console.log("Loading player from wallet:", connectedAddress);
+    console.log("Contract address:", CONTRACT_ADDRESS);
 
     const player = await c.players(
       connectedAddress
