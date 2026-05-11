@@ -592,15 +592,39 @@ async function battle() {
     output.textContent +=
       "✅ Battle confirmed!\n\n";
 
-    const battleLogs: string[] =
-      [];
+    console.log(
+      "Battle receipt:",
+      receipt
+    );
+
+    const battleLogs: string[] = [];
 
     for (const log of receipt.logs) {
       try {
+
+        console.log(
+          "Raw log:",
+          log
+        );
+
+        // ignore logs from other contracts
+        if (
+          log.address.toLowerCase() !==
+          CONTRACT_ADDRESS.toLowerCase()
+        ) {
+          continue;
+        }
+
         const parsed =
-          c.interface.parseLog(
-            log
-          );
+          c.interface.parseLog({
+            topics: log.topics,
+            data: log.data,
+          });
+
+        console.log(
+          "Parsed log:",
+          parsed
+        );
 
         if (!parsed) continue;
 
@@ -608,21 +632,26 @@ async function battle() {
           parsed.name ===
           "battleLog"
         ) {
+
           const round =
-            parsed.args.round;
+            parsed.args[0].toString();
 
           const message =
-            parsed.args.message;
+            parsed.args[1];
 
           const value =
-            parsed.args.value;
+            parsed.args[2].toString();
 
           battleLogs.push(
             `⚔️ Round ${round}\n${message} ${value}\n`
           );
         }
-      } catch {
-        //
+
+      } catch (err) {
+        console.error(
+          "Battle log parse error:",
+          err
+        );
       }
     }
 
@@ -637,11 +666,13 @@ async function battle() {
     }
 
     await loadMyPlayer();
+
   } catch (error: any) {
     console.error(error);
     alert(error.message);
   }
 }
+
 
 async function revive() {
   try {
