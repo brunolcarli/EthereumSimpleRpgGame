@@ -16,7 +16,6 @@ declare global {
   }
 }
 
-let provider: ethers.BrowserProvider | null = null;
 let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
@@ -37,6 +36,7 @@ app.innerHTML = `
     <section class="grid">
       <div class="card">
         <h2>Register Player</h2>
+
         <input id="playerName" placeholder="Player name" />
 
         <select id="classId">
@@ -45,19 +45,29 @@ app.innerHTML = `
           <option value="3">Ranger</option>
         </select>
 
-        <button id="registerPlayer">Register - ${REGISTER_PRICE} ETH</button>
+        <button id="registerPlayer">
+          Register - ${REGISTER_PRICE} ETH
+        </button>
       </div>
 
       <div class="card">
         <h2>My Character</h2>
-        <button id="loadMyPlayer">Load My Character</button>
+
+        <button id="loadMyPlayer">
+          Load My Character
+        </button>
+
         <div id="myPlayerOutput" class="player-card"></div>
       </div>
     </section>
 
     <section class="card">
       <h2>Enemies</h2>
-      <button id="loadEnemies">Load Enemies</button>
+
+      <button id="loadEnemies">
+        Load Enemies
+      </button>
+
       <div id="enemiesOutput" class="enemy-list"></div>
     </section>
 
@@ -65,6 +75,7 @@ app.innerHTML = `
       <h2>Battle</h2>
 
       <label>Enemy</label>
+
       <select id="battleEnemyId">
         <option value="1">Goblin</option>
         <option value="2">Orc</option>
@@ -76,28 +87,60 @@ app.innerHTML = `
       </select>
 
       <label>Rounds</label>
-      <input id="battleRounds" type="number" min="1" value="1" />
 
-      <button id="battle">Battle</button>
+      <input
+        id="battleRounds"
+        type="number"
+        min="1"
+        value="1"
+      />
+
+      <button id="battle">
+        Battle
+      </button>
+
       <p id="battlePrice"></p>
+
       <pre id="battleOutput"></pre>
     </section>
 
     <section class="grid">
       <div class="card">
         <h2>Revive Character</h2>
-        <input id="reviveAddress" placeholder="Target wallet address" />
-        <button id="useMyAddressRevive">Use My Address</button>
-        <button id="revive">Revive - ${REVIVE_PRICE} ETH</button>
+
+        <input
+          id="reviveAddress"
+          placeholder="Target wallet address"
+        />
+
+        <button id="useMyAddressRevive">
+          Use My Address
+        </button>
+
+        <button id="revive">
+          Revive - ${REVIVE_PRICE} ETH
+        </button>
+
         <pre id="reviveOutput"></pre>
       </div>
 
       <div class="card">
         <h2>Search Character</h2>
-        <input id="searchAddress" placeholder="Wallet address" />
-        <button id="useMyAddressSearch">Use My Address</button>
-        <button id="searchPlayer">Search</button>
-        <pre id="searchOutput"></pre>
+
+        <input
+          id="searchAddress"
+          placeholder="Wallet address"
+        />
+
+        <button id="useMyAddressSearch">
+          Use My Address
+        </button>
+
+        <button id="searchPlayer">
+          Search
+        </button>
+
+        <div id="searchOutput" class="player-card"></div>
       </div>
     </section>
   </main>
@@ -109,40 +152,6 @@ function requireContract() {
   }
 
   return contract;
-}
-
-async function switchToSepolia() {
-  if (!window.ethereum) {
-    throw new Error("No injected wallet found. Install MetaMask, Rabby, Coinbase Wallet, or another EVM wallet.");
-  }
-
-  try {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: SEPOLIA_CHAIN_ID }],
-    });
-  } catch (error: any) {
-    if (error.code === 4902) {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: SEPOLIA_CHAIN_ID,
-            chainName: "Sepolia",
-            nativeCurrency: {
-              name: "Sepolia ETH",
-              symbol: "ETH",
-              decimals: 18,
-            },
-            rpcUrls: ["https://rpc.sepolia.org"],
-            blockExplorerUrls: ["https://sepolia.etherscan.io"],
-          },
-        ],
-      });
-    } else {
-      throw error;
-    }
-  }
 }
 
 function getInjectedProvider() {
@@ -169,37 +178,43 @@ async function connectWallet() {
   try {
     const injectedProvider = getInjectedProvider();
 
-    const provider = new ethers.BrowserProvider(injectedProvider);
+    const provider = new ethers.BrowserProvider(
+      injectedProvider
+    );
 
     await provider.send("eth_requestAccounts", []);
 
     try {
-      await provider.send("wallet_switchEthereumChain", [
-        { chainId: "0xaa36a7" }
-      ]);
+      await provider.send(
+        "wallet_switchEthereumChain",
+        [{ chainId: SEPOLIA_CHAIN_ID }]
+      );
     } catch (switchError: any) {
       if (switchError.code === 4902) {
-        await provider.send("wallet_addEthereumChain", [
-          {
-            chainId: "0xaa36a7",
-            chainName: "Sepolia",
-            nativeCurrency: {
-              name: "Sepolia ETH",
-              symbol: "ETH",
-              decimals: 18,
+        await provider.send(
+          "wallet_addEthereumChain",
+          [
+            {
+              chainId: SEPOLIA_CHAIN_ID,
+              chainName: "Sepolia",
+              nativeCurrency: {
+                name: "Sepolia ETH",
+                symbol: "ETH",
+                decimals: 18,
+              },
+              rpcUrls: ["https://rpc.sepolia.org"],
+              blockExplorerUrls: [
+                "https://sepolia.etherscan.io",
+              ],
             },
-            rpcUrls: ["https://rpc.sepolia.org"],
-            blockExplorerUrls: ["https://sepolia.etherscan.io"],
-          },
-        ]);
+          ]
+        );
       }
     }
 
     signer = await provider.getSigner();
 
-    const address = await signer.getAddress();
-
-    connectedAddress = address;
+    connectedAddress = await signer.getAddress();
 
     contract = new ethers.Contract(
       CONTRACT_ADDRESS,
@@ -208,8 +223,7 @@ async function connectWallet() {
     );
 
     document.querySelector("#walletStatus")!.textContent =
-      `Connected: ${address}`;
-
+      `Connected: ${connectedAddress}`;
   } catch (error) {
     console.error(error);
   }
@@ -249,17 +263,31 @@ async function registerPlayer() {
   try {
     const c = requireContract();
 
-    const name = (document.querySelector<HTMLInputElement>("#playerName")!).value;
-    const classId = Number(document.querySelector<HTMLSelectElement>("#classId")!.value);
+    const name =
+      document.querySelector<HTMLInputElement>(
+        "#playerName"
+      )!.value;
+
+    const classId = Number(
+      document.querySelector<HTMLSelectElement>(
+        "#classId"
+      )!.value
+    );
 
     if (!name) {
       alert("Enter a player name.");
       return;
     }
 
-    const tx = await c.registerPlayer(name, classId, {
-      value: ethers.parseEther(REGISTER_PRICE),
-    });
+    const tx = await c.registerPlayer(
+      name,
+      classId,
+      {
+        value: ethers.parseEther(
+          REGISTER_PRICE
+        ),
+      }
+    );
 
     await tx.wait();
 
@@ -273,12 +301,19 @@ async function loadMyPlayer() {
   try {
     const c = requireContract();
 
-    const player = await c.players(connectedAddress);
+    const player = await c.players(
+      connectedAddress
+    );
+
     const data = formatPlayer(player);
 
-    const container = document.querySelector<HTMLDivElement>("#myPlayerOutput")!;
+    const container =
+      document.querySelector<HTMLDivElement>(
+        "#myPlayerOutput"
+      )!;
 
-    const classEmoji = data.class === "Warrior"
+    const classEmoji =
+      data.class === "Warrior"
         ? "🗡️"
         : data.class === "Mage"
         ? "🧙"
@@ -291,7 +326,7 @@ async function loadMyPlayer() {
       <p>⭐ <strong>Level:</strong> ${data.level}</p>
       <p>📈 <strong>EXP:</strong> ${data.exp} / ${data.nextLevel}</p>
 
-        <hr />
+      <hr />
 
       <p>❤️ <strong>HP:</strong> ${data.currentHp} / ${data.maxHp}</p>
       <p>⚔️ <strong>ATK:</strong> ${data.atk}</p>
@@ -300,7 +335,12 @@ async function loadMyPlayer() {
 
       <hr />
 
-      <p><strong>Status:</strong> ${data.isAlive ? "🟢 Alive" : "🔴 Dead"}</p>
+      <p><strong>Status:</strong> ${
+        data.isAlive
+          ? "🟢 Alive"
+          : "🔴 Dead"
+      }</p>
+
       <p><strong>Wallet:</strong> ${connectedAddress}</p>
     `;
   } catch (error: any) {
@@ -312,33 +352,47 @@ async function loadEnemies() {
   try {
     const c = requireContract();
 
-    const enemyEmojiMap: Record<string, string> = {
-        Goblin: "👺",
-        Orc: "🪓",
-        Skeleton: "💀",
-        Zombie: "🧟",
-        Werewolf: "🐺",
-        "Dark Elf": "🧝",
-        Dragon: "🐉",
+    const enemyEmojiMap: Record<
+      string,
+      string
+    > = {
+      Goblin: "👺",
+      Orc: "🪓",
+      Skeleton: "💀",
+      Zombie: "🧟",
+      Werewolf: "🐺",
+      "Dark Elf": "🧝",
+      Dragon: "🐉",
     };
 
-    const container = document.querySelector<HTMLDivElement>("#enemiesOutput")!;
+    const container =
+      document.querySelector<HTMLDivElement>(
+        "#enemiesOutput"
+      )!;
+
     container.innerHTML = "";
 
     for (let i = 1; i <= 7; i++) {
       const enemy = await c.enemies(i);
+
       const data = formatEnemy(enemy);
 
-      const div = document.createElement("div");
+      const div =
+        document.createElement("div");
+
       div.className = "enemy-card";
+
       div.innerHTML = `
-        <h3>${enemyEmojiMap[data.name] || "👾"}  ${data.name}</h3>
-        <p>ID: ${data.id}</p>
-        <p>HP: ${data.hp}</p>
-        <p>ATK: ${data.atk}</p>
-        <p>DEF: ${data.def}</p>
-        <p>MAGIC: ${data.magic}</p>
-        <p>EXP: ${data.exp}</p>
+        <h3>
+          ${enemyEmojiMap[data.name] || "👾"}
+          ${data.name}
+        </h3>
+
+        <p>❤️ HP: ${data.hp}</p>
+        <p>⚔️ ATK: ${data.atk}</p>
+        <p>🛡️ DEF: ${data.def}</p>
+        <p>🪄 MAGIC: ${data.magic}</p>
+        <p>📈 EXP: ${data.exp}</p>
       `;
 
       container.appendChild(div);
@@ -349,11 +403,21 @@ async function loadEnemies() {
 }
 
 function updateBattlePrice() {
-  const rounds = Number(document.querySelector<HTMLInputElement>("#battleRounds")!.value || "0");
-  const total = Number(PRICE_PER_ROUND) * rounds;
+  const rounds = Number(
+    document.querySelector<HTMLInputElement>(
+      "#battleRounds"
+    )!.value || "0"
+  );
 
-  document.querySelector("#battlePrice")!.textContent =
-    `Battle cost: ${total.toFixed(4)} ETH`;
+  const total =
+    Number(PRICE_PER_ROUND) * rounds;
+
+  document.querySelector(
+    "#battlePrice"
+  )!.textContent =
+    `💰 Battle cost: ${total.toFixed(
+      4
+    )} ETH`;
 }
 
 async function battle() {
@@ -361,61 +425,86 @@ async function battle() {
     const c = requireContract();
 
     const enemyId = Number(
-      document.querySelector<HTMLSelectElement>("#battleEnemyId")!.value
+      document.querySelector<HTMLSelectElement>(
+        "#battleEnemyId"
+      )!.value
     );
 
     const rounds = Number(
-      document.querySelector<HTMLInputElement>("#battleRounds")!.value
+      document.querySelector<HTMLInputElement>(
+        "#battleRounds"
+      )!.value
     );
 
-    const output = document.querySelector("#battleOutput")!;
+    const output =
+      document.querySelector(
+        "#battleOutput"
+      )!;
 
-    output.textContent = "⏳ Waiting transaction confirmation...\n";
+    output.textContent =
+      "⏳ Waiting transaction confirmation...\n";
 
-    const pricePerRound = await c.pricePerRound();
+    const pricePerRound =
+      await c.pricePerRound();
 
-    const battleCost = pricePerRound * BigInt(rounds);
+    const battleCost =
+      pricePerRound * BigInt(rounds);
 
-    const tx = await c.battle(enemyId, rounds, {
-      value: battleCost,
-    });
+    const tx = await c.battle(
+      enemyId,
+      rounds,
+      {
+        value: battleCost,
+      }
+    );
 
-    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
+    output.textContent +=
+      `📦 TX Sent: ${tx.hash}\n\n`;
 
     const receipt = await tx.wait();
 
-    output.textContent += `✅ Battle confirmed!\n\n`;
+    output.textContent +=
+      "✅ Battle confirmed!\n\n";
 
     const battleLogs: string[] = [];
 
     for (const log of receipt.logs) {
       try {
-        const parsed = c.interface.parseLog(log);
+        const parsed =
+          c.interface.parseLog(log);
 
         if (!parsed) continue;
 
-        if (parsed.name === "battleLog") {
-          const round = parsed.args.round;
-          const message = parsed.args.message;
-          const value = parsed.args.value;
+        if (
+          parsed.name === "battleLog"
+        ) {
+          const round =
+            parsed.args.round;
+
+          const message =
+            parsed.args.message;
+
+          const value =
+            parsed.args.value;
 
           battleLogs.push(
             `⚔️ Round ${round}\n${message} ${value}\n`
           );
         }
-      } catch (err) {
-        // Ignore unrelated logs
+      } catch {
+        // ignore unrelated logs
       }
     }
 
     if (battleLogs.length === 0) {
-      output.textContent += "No battle logs found.";
+      output.textContent +=
+        "No battle logs found.";
     } else {
-      output.textContent += battleLogs.join("\n");
+      output.textContent +=
+        battleLogs.join("\n");
     }
 
     await loadMyPlayer();
-
   } catch (error: any) {
     console.error(error);
     alert(error.message);
@@ -426,7 +515,10 @@ async function revive() {
   try {
     const c = requireContract();
 
-    const target = document.querySelector<HTMLInputElement>("#reviveAddress")!.value;
+    const target =
+      document.querySelector<HTMLInputElement>(
+        "#reviveAddress"
+      )!.value;
 
     if (!ethers.isAddress(target)) {
       alert("Invalid address.");
@@ -434,12 +526,17 @@ async function revive() {
     }
 
     const tx = await c.revive(target, {
-      value: ethers.parseEther(REVIVE_PRICE),
+      value: ethers.parseEther(
+        REVIVE_PRICE
+      ),
     });
 
     await tx.wait();
 
-    document.querySelector("#reviveOutput")!.textContent = `Revived: ${target}`;
+    document.querySelector(
+      "#reviveOutput"
+    )!.textContent =
+      `❤️ Revived: ${target}`;
   } catch (error: any) {
     alert(error.message);
   }
@@ -449,42 +546,140 @@ async function searchPlayer() {
   try {
     const c = requireContract();
 
-    const address = document.querySelector<HTMLInputElement>("#searchAddress")!.value;
+    const address =
+      document.querySelector<HTMLInputElement>(
+        "#searchAddress"
+      )!.value;
 
     if (!ethers.isAddress(address)) {
       alert("Invalid address.");
       return;
     }
 
-    const player = await c.players(address);
+    const player =
+      await c.players(address);
 
-    document.querySelector("#searchOutput")!.textContent =
-      JSON.stringify(formatPlayer(player), null, 2);
+    const data = formatPlayer(player);
+
+    const container =
+      document.querySelector<HTMLDivElement>(
+        "#searchOutput"
+      )!;
+
+    const classEmoji =
+      data.class === "Warrior"
+        ? "🗡️"
+        : data.class === "Mage"
+        ? "🧙"
+        : "🏹";
+
+    container.innerHTML = `
+      <h3>${data.name || "Unnamed Player"}</h3>
+
+      <p>${classEmoji} <strong>Class:</strong> ${data.class}</p>
+      <p>⭐ <strong>Level:</strong> ${data.level}</p>
+      <p>📈 <strong>EXP:</strong> ${data.exp} / ${data.nextLevel}</p>
+
+      <hr />
+
+      <p>❤️ <strong>HP:</strong> ${data.currentHp} / ${data.maxHp}</p>
+      <p>⚔️ <strong>ATK:</strong> ${data.atk}</p>
+      <p>🛡️ <strong>DEF:</strong> ${data.def}</p>
+      <p>🪄 <strong>MAGIC:</strong> ${data.magic}</p>
+
+      <hr />
+
+      <p><strong>Status:</strong> ${
+        data.isAlive
+          ? "🟢 Alive"
+          : "🔴 Dead"
+      }</p>
+
+      <p><strong>Wallet:</strong> ${address}</p>
+    `;
   } catch (error: any) {
     alert(error.message);
   }
 }
 
-document.querySelector("#connectWallet")!.addEventListener("click", connectWallet);
-document.querySelector("#registerPlayer")!.addEventListener("click", registerPlayer);
-document.querySelector("#loadMyPlayer")!.addEventListener("click", loadMyPlayer);
-document.querySelector("#loadEnemies")!.addEventListener("click", loadEnemies);
-document.querySelector("#battle")!.addEventListener("click", battle);
-document.querySelector("#revive")!.addEventListener("click", revive);
-document.querySelector("#searchPlayer")!.addEventListener("click", searchPlayer);
+document
+  .querySelector("#connectWallet")!
+  .addEventListener(
+    "click",
+    connectWallet
+  );
 
-document.querySelector("#battleRounds")!.addEventListener("input", updateBattlePrice);
+document
+  .querySelector("#registerPlayer")!
+  .addEventListener(
+    "click",
+    registerPlayer
+  );
 
-document.querySelector("#useMyAddressRevive")!.addEventListener("click", () => {
-  if (connectedAddress) {
-    document.querySelector<HTMLInputElement>("#reviveAddress")!.value = connectedAddress;
-  }
-});
+document
+  .querySelector("#loadMyPlayer")!
+  .addEventListener(
+    "click",
+    loadMyPlayer
+  );
 
-document.querySelector("#useMyAddressSearch")!.addEventListener("click", () => {
-  if (connectedAddress) {
-    document.querySelector<HTMLInputElement>("#searchAddress")!.value = connectedAddress;
-  }
-});
+document
+  .querySelector("#loadEnemies")!
+  .addEventListener(
+    "click",
+    loadEnemies
+  );
+
+document
+  .querySelector("#battle")!
+  .addEventListener(
+    "click",
+    battle
+  );
+
+document
+  .querySelector("#revive")!
+  .addEventListener(
+    "click",
+    revive
+  );
+
+document
+  .querySelector("#searchPlayer")!
+  .addEventListener(
+    "click",
+    searchPlayer
+  );
+
+document
+  .querySelector("#battleRounds")!
+  .addEventListener(
+    "input",
+    updateBattlePrice
+  );
+
+document
+  .querySelector(
+    "#useMyAddressRevive"
+  )!
+  .addEventListener("click", () => {
+    if (connectedAddress) {
+      document.querySelector<HTMLInputElement>(
+        "#reviveAddress"
+      )!.value = connectedAddress;
+    }
+  });
+
+document
+  .querySelector(
+    "#useMyAddressSearch"
+  )!
+  .addEventListener("click", () => {
+    if (connectedAddress) {
+      document.querySelector<HTMLInputElement>(
+        "#searchAddress"
+      )!.value = connectedAddress;
+    }
+  });
 
 updateBattlePrice();
