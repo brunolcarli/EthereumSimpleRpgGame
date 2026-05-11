@@ -253,18 +253,18 @@ async function connectWallet() {
 
 function formatPlayer(player: any) {
   return {
-    level: player.lv.toString(),
-    name: player.name,
-    exp: player.exp.toString(),
-    nextLevel: player.nextLv.toString(),
-    classId: player.classId.toString(),
-    class: player.class,
-    maxHp: player.maxHp.toString(),
-    currentHp: player.currentHp.toString(),
-    atk: player.atk.toString(),
-    def: player.def.toString(),
-    magic: player.magic.toString(),
-    isAlive: player.isAlive,
+    level: player[0].toString(),
+    name: player[1],
+    exp: player[2].toString(),
+    nextLevel: player[3].toString(),
+    classId: player[4].toString(),
+    class: player[5],
+    maxHp: player[6].toString(),
+    currentHp: player[7].toString(),
+    atk: player[8].toString(),
+    def: player[9].toString(),
+    magic: player[10].toString(),
+    isAlive: player[11],
   };
 }
 
