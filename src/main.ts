@@ -549,130 +549,63 @@ async function battle() {
     const c = requireContract();
 
     const enemyId = Number(
-      document.querySelector<HTMLSelectElement>(
-        "#battleEnemyId"
-      )!.value
+      document.querySelector<HTMLSelectElement>("#battleEnemyId")!.value
     );
 
     const rounds = Number(
-      document.querySelector<HTMLInputElement>(
-        "#battleRounds"
-      )!.value
+      document.querySelector<HTMLInputElement>("#battleRounds")!.value
     );
 
-    const output =
-      document.querySelector(
-        "#battleOutput"
-      )!;
+    const output = document.querySelector("#battleOutput")!;
 
-    output.textContent =
-      "⏳ Waiting transaction confirmation...\n";
+    output.textContent = "⏳ Waiting transaction confirmation...\n";
 
-    const pricePerRound =
-      await c.pricePerRound();
+    const pricePerRound = await c.pricePerRound();
 
-    const battleCost =
-      pricePerRound *
-      BigInt(rounds);
+    const battleCost = pricePerRound * BigInt(rounds);
 
-    const tx = await c.battle(
-      enemyId,
-      rounds,
-      {
-        value: battleCost,
-      }
-    );
+    const tx = await c.battle(enemyId, rounds, {
+      value: battleCost,
+    });
 
-    output.textContent +=
-      `📦 TX Sent: ${tx.hash}\n\n`;
+    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
 
-    const receipt =
-      await tx.wait();
+    const receipt = await tx.wait();
 
-    output.textContent +=
-      "✅ Battle confirmed!\n\n";
-
-    console.log(
-      "Battle receipt:",
-      receipt
-    );
+    output.textContent += `✅ Battle confirmed!\n\n`;
 
     const battleLogs: string[] = [];
 
     for (const log of receipt.logs) {
       try {
-
-        console.log(
-          "Raw log:",
-          log
-        );
-
-        // ignore logs from other contracts
-        if (
-          log.address.toLowerCase() !==
-          CONTRACT_ADDRESS.toLowerCase()
-        ) {
-          continue;
-        }
-
-        const parsed =
-          c.interface.parseLog({
-            topics: log.topics,
-            data: log.data,
-          });
-
-        console.log(
-          "Parsed log:",
-          parsed
-        );
+        const parsed = c.interface.parseLog(log);
 
         if (!parsed) continue;
 
-        if (
-          parsed.name ===
-          "battleLog"
-        ) {
-
-          const round =
-            parsed.args[0].toString();
-
-          const message =
-            parsed.args[1];
-
-          const value =
-            parsed.args[2].toString();
+        if (parsed.name === "battleLog") {
+          const round = parsed.args[0].toString();
+          const message = parsed.args[1];
+          const value = parsed.args[2].toString();
 
           battleLogs.push(
             `⚔️ Round ${round}\n${message} ${value}\n`
           );
         }
-
-      } catch (err) {
-        console.error(
-          "Battle log parse error:",
-          err
-        );
+      } catch {
+        // Ignore unrelated logs
       }
     }
 
-    if (
-      battleLogs.length === 0
-    ) {
-      output.textContent +=
-        "No battle logs found.";
-    } else {
-      output.textContent +=
-        battleLogs.join("\n");
-    }
+    output.textContent += battleLogs.length
+      ? battleLogs.join("\n")
+      : "No battle logs found.";
 
     await loadMyPlayer();
-
   } catch (error: any) {
     console.error(error);
     alert(error.message);
   }
 }
-
 
 async function revive() {
   try {
