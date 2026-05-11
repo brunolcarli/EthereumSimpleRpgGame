@@ -21,7 +21,7 @@ let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
 
-const READ_RPC = "https://rpc.sepolia.org";
+const READ_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
