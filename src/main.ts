@@ -25,6 +25,18 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
   <main class="container">
+
+    <div class="fantasy-bg">
+      <div class="sky"></div>
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+      <div class="mountains"></div>
+      <div class="castle">🏰</div>
+      <div class="forest"></div>
+      <div class="dragon dragon-1">🐉</div>
+      <div class="dragon dragon-2">🐲</div>
+    </div>
+
     <h1>⚔️ Simple Battle RPG</h1>
     <p class="subtitle">Sepolia On-chain RPG powered by Solidity</p>
 
