@@ -4,8 +4,6 @@ import {
   CONTRACT_ABI,
   SEPOLIA_CHAIN_ID,
   REGISTER_PRICE,
-  PRICE_PER_ROUND,
-  REVIVE_PRICE,
 } from "./contract";
 
 import "./style.css";
@@ -95,13 +93,16 @@ app.innerHTML = `
       <label>Enemy</label>
 
       <select id="battleEnemyId">
-        <option value="1">Goblin</option>
-        <option value="2">Orc</option>
-        <option value="3">Skeleton</option>
-        <option value="4">Zombie</option>
-        <option value="5">Werewolf</option>
-        <option value="6">Dark Elf</option>
-        <option value="7">Dragon</option>
+        <option value="1">👺 Goblin</option>
+        <option value="2">🪓 Orc</option>
+        <option value="3">💀 Skeleton</option>
+        <option value="4">🧟 Zombie</option>
+        <option value="5">🐺 Werewolf</option>
+        <option value="6">🧝 Dark Elf</option>
+        <option value="7">🦎 Great Lizard</option>
+        <option value="8">🪨 Troll</option>
+        <option value="9">🧚 Dark Fairy</option>
+        <option value="10">🐉 Dragon</option>
       </select>
 
       <label>Rounds</label>
@@ -136,7 +137,7 @@ app.innerHTML = `
         </button>
 
         <button id="revive">
-          Revive - ${REVIVE_PRICE} ETH
+          Revive
         </button>
 
         <pre id="reviveOutput"></pre>
@@ -163,6 +164,22 @@ app.innerHTML = `
           class="player-card"
         ></div>
       </div>
+
+      <div class="card">
+      <h2>Heal Character</h2>
+      <input id="healAddress" placeholder="Target wallet address" />
+      <button id="useMyAddressHeal">Use My Address</button>
+      <button id="heal">Heal</button>
+      <pre id="healOutput"></pre>
+    </div>
+
+    <div class="card">
+      <h2>PvP Challenge</h2>
+      <input id="challengeAddress" placeholder="Target player wallet" />
+      <input id="challengeRounds" type="number" min="1" value="1" />
+      <button id="challengePlayer">Challenge Player</button>
+      <pre id="challengeOutput"></pre>
+    </div>
     </section>
   </main>
 `;
@@ -297,6 +314,136 @@ async function connectWallet() {
   }
 }
 
+async function heal() {
+  try {
+    const c = requireContract();
+
+    const target =
+      document.querySelector<HTMLInputElement>(
+        "#healAddress"
+      )!.value;
+
+    if (!ethers.isAddress(target)) {
+      alert("Invalid address.");
+      return;
+    }
+
+    const commonPrice =
+      await c.commonPrice();
+
+    const tx = await c.heal(target, {
+      value: commonPrice,
+    });
+
+    document.querySelector(
+      "#healOutput"
+    )!.textContent =
+      `⏳ Heal TX sent: ${tx.hash}`;
+
+    const readProvider =
+      new ethers.JsonRpcProvider(READ_RPC);
+
+    const receipt =
+      await readProvider.waitForTransaction(
+        tx.hash,
+        1,
+        120000
+      );
+
+    if (!receipt) {
+      document.querySelector(
+        "#healOutput"
+      )!.textContent =
+        "❌ Heal confirmation timeout.";
+      return;
+    }
+
+    document.querySelector(
+      "#healOutput"
+    )!.textContent =
+      `🧪 Healed: ${target}`;
+
+    await loadMyPlayer();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function challengePlayer() {
+  try {
+    const c = requireContract();
+
+    const target = document.querySelector<HTMLInputElement>("#challengeAddress")!.value;
+    const rounds = Number(
+      document.querySelector<HTMLInputElement>("#challengeRounds")!.value
+    );
+
+    if (rounds <= 0) {
+      alert("Rounds must be greater than zero.");
+      return;
+    }
+
+    const output = document.querySelector("#challengeOutput")!;
+
+    if (!ethers.isAddress(target)) {
+      alert("Invalid target address.");
+      return;
+    }
+
+    output.textContent = "⏳ Sending PvP challenge...\n";
+
+    const commonPrice = await c.commonPrice();
+    const battleCost = commonPrice * BigInt(rounds);
+
+    const tx = await c.challengePlayer(target, rounds, {
+      value: battleCost,
+    });
+
+    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
+    output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
+
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const receipt = await readProvider.waitForTransaction(tx.hash, 1, 120000);
+
+    if (!receipt) {
+      output.textContent += "❌ Transaction confirmation timeout.";
+      return;
+    }
+
+    output.textContent += "✅ PvP battle confirmed!\n\n";
+
+    const iface = new ethers.Interface(CONTRACT_ABI);
+    const battleLogs: string[] = [];
+
+    for (const log of receipt.logs) {
+      try {
+        const parsed = iface.parseLog({
+          topics: log.topics,
+          data: log.data,
+        });
+
+        if (parsed?.name === "battleLog") {
+          battleLogs.push(
+            `⚔️ Round ${parsed.args[0].toString()}\n${parsed.args[1]} ${parsed.args[2].toString()}\n`
+          );
+        }
+      } catch {
+        // ignore unrelated logs
+      }
+    }
+
+    output.textContent += battleLogs.length
+      ? battleLogs.join("\n")
+      : "No battle logs found.";
+
+    await loadMyPlayer();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
 function formatPlayer(player: any) {
   return {
     level: player[0].toString(),
@@ -324,6 +471,7 @@ function formatEnemy(enemy: any) {
     magic: enemy[5].toString(),
     isAlive: enemy[6],
     exp: enemy[7].toString(),
+    gold: enemy[8].toString(),
   };
 }
 
@@ -456,66 +604,53 @@ async function loadMyPlayer() {
 
 async function loadEnemies() {
   try {
-    const readProvider =
-      new ethers.JsonRpcProvider(
-        READ_RPC
-      );
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
 
-    const readContract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        readProvider
-      );
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
 
-    const enemyEmojiMap: Record<
-      string,
-      string
-    > = {
+    const enemyEmojiMap: Record<string, string> = {
       Goblin: "👺",
       Orc: "🪓",
       Skeleton: "💀",
       Zombie: "🧟",
       Werewolf: "🐺",
       "Dark Elf": "🧝",
+      "Great Lizard": "🦎",
+      Troll: "🪨",
+      "Dark Fairy": "🧚",
       Dragon: "🐉",
     };
 
-    const container =
-      document.querySelector<HTMLDivElement>(
-        "#enemiesOutput"
-      )!;
+    const container = document.querySelector<HTMLDivElement>(
+      "#enemiesOutput"
+    )!;
 
-    container.innerHTML = "";
+    // Prevent duplicated cards
+    container.replaceChildren();
 
-    for (let i = 1; i <= 7; i++) {
-      const enemy =
-        await readContract.enemies(i);
+    const enemyIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-      const data =
-        formatEnemy(enemy);
+    for (const enemyId of enemyIds) {
+      const enemy = await readContract.enemies(enemyId);
+      const data = formatEnemy(enemy);
 
-      const div =
-        document.createElement(
-          "div"
-        );
-
+      const div = document.createElement("div");
       div.className = "enemy-card";
+      div.dataset.enemyId = data.id;
 
       div.innerHTML = `
-        <h3>
-          ${
-            enemyEmojiMap[data.name] ||
-            "👾"
-          }
-          ${data.name}
-        </h3>
+        <h3>${enemyEmojiMap[data.name] || "👾"} ${data.name}</h3>
 
         <p>❤️ HP: ${data.hp}</p>
         <p>⚔️ ATK: ${data.atk}</p>
         <p>🛡️ DEF: ${data.def}</p>
         <p>🪄 MAGIC: ${data.magic}</p>
         <p>📈 EXP: ${data.exp}</p>
+        <p>💰 GOLD: ${ethers.formatEther(data.gold)} ETH</p>
       `;
 
       container.appendChild(div);
@@ -525,23 +660,28 @@ async function loadEnemies() {
     alert(error.message);
   }
 }
+async function updateBattlePrice() {
+  try {
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
 
-function updateBattlePrice() {
-  const rounds = Number(
-    document.querySelector<HTMLInputElement>(
-      "#battleRounds"
-    )!.value || "0"
-  );
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
 
-  const total =
-    Number(PRICE_PER_ROUND) * rounds;
+    const rounds = Number(
+      document.querySelector<HTMLInputElement>("#battleRounds")!.value || "0"
+    );
 
-  document.querySelector(
-    "#battlePrice"
-  )!.textContent =
-    `💰 Battle cost: ${total.toFixed(
-      4
-    )} ETH`;
+    const commonPrice = await readContract.commonPrice();
+    const totalWei = commonPrice * BigInt(rounds);
+
+    document.querySelector("#battlePrice")!.textContent =
+      `💰 Battle cost: ${ethers.formatEther(totalWei)} ETH`;
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 
@@ -561,8 +701,8 @@ async function battle() {
 
     output.textContent = "⏳ Sending battle transaction...\n";
 
-    const pricePerRound = await c.pricePerRound();
-    const battleCost = pricePerRound * BigInt(rounds);
+    const commonPrice = await c.commonPrice();
+    const battleCost = commonPrice * BigInt(rounds);
 
     const tx = await c.battle(enemyId, rounds, {
       value: battleCost,
@@ -637,29 +777,46 @@ async function revive() {
         "#reviveAddress"
       )!.value;
 
-    if (
-      !ethers.isAddress(target)
-    ) {
+    if (!ethers.isAddress(target)) {
       alert("Invalid address.");
       return;
     }
 
-    const tx = await c.revive(
-      target,
-      {
-        value:
-          ethers.parseEther(
-            REVIVE_PRICE
-          ),
-      }
-    );
+    const commonPrice = await c.commonPrice();
 
-    await tx.wait();
+    const tx = await c.revive(target, {
+      value: commonPrice,
+    });
+
+    document.querySelector(
+      "#reviveOutput"
+    )!.textContent =
+      `⏳ Revive TX sent: ${tx.hash}`;
+
+    const readProvider =
+      new ethers.JsonRpcProvider(READ_RPC);
+
+    const receipt =
+      await readProvider.waitForTransaction(
+        tx.hash,
+        1,
+        120000
+      );
+
+    if (!receipt) {
+      document.querySelector(
+        "#reviveOutput"
+      )!.textContent =
+        "❌ Revive confirmation timeout.";
+      return;
+    }
 
     document.querySelector(
       "#reviveOutput"
     )!.textContent =
       `❤️ Revived: ${target}`;
+
+    await loadMyPlayer();
   } catch (error: any) {
     console.error(error);
     alert(error.message);
@@ -852,5 +1009,22 @@ document
       }
     }
   );
+
+document
+  .querySelector("#heal")!
+  .addEventListener("click", heal);
+
+document
+  .querySelector("#challengePlayer")!
+  .addEventListener("click", challengePlayer);
+
+document
+  .querySelector("#useMyAddressHeal")!
+  .addEventListener("click", () => {
+    if (connectedAddress) {
+      document.querySelector<HTMLInputElement>("#healAddress")!.value =
+        connectedAddress;
+    }
+  });
 
 updateBattlePrice();
