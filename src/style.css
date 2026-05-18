@@ -366,3 +366,80 @@ pre {
 .card {
   backdrop-filter: blur(3px);
 }
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  margin-top: 22px;
+}
+
+.leaderboard-table thead th {
+  color: #ffd77a;
+  font-family: "Cinzel", serif;
+  font-size: 18px;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 215, 122, 0.35);
+}
+
+.leaderboard-table tbody tr {
+  background: linear-gradient(
+    180deg,
+    rgba(34, 22, 13, 0.95),
+    rgba(16, 10, 7, 0.95)
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 215, 122, 0.14);
+}
+
+.leaderboard-table tbody td {
+  padding: 14px;
+  color: #ffe9b0;
+  font-weight: 700;
+}
+
+.leaderboard-table tbody tr td:first-child {
+  border-radius: 12px 0 0 12px;
+  color: #ffd77a;
+  font-size: 20px;
+}
+
+.leaderboard-table tbody tr td:last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+.leaderboard-table tbody tr:hover {
+  transform: scale(1.01);
+  background: linear-gradient(
+    180deg,
+    rgba(62, 39, 19, 0.98),
+    rgba(22, 13, 8, 0.98)
+  );
+}
+
+.wallet-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.wallet-cell code {
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  color: #f8e7bd;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 215, 122, 0.18);
+  padding: 8px 10px;
+  border-radius: 8px;
+  word-break: break-all;
+}
+
+.copy-wallet-btn {
+  width: auto;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  box-shadow: 0 3px 0 #4b270c;
+}

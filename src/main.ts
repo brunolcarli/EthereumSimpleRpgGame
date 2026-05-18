@@ -15,6 +15,48 @@ declare global {
   }
 }
 
+
+async function getUniquePlayerWalletsFromEtherscan(): Promise<string[]> {
+  const apiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+
+  const url =
+    `https://api.etherscan.io/v2/api` +
+    `?chainid=11155111` +
+    `&module=account` +
+    `&action=txlist` +
+    `&address=${CONTRACT_ADDRESS}` +
+    `&startblock=0` +
+    `&endblock=99999999` +
+    `&page=1` +
+    `&offset=1000` +
+    `&sort=asc` +
+    `&apikey=${apiKey}`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.status !== "1") {
+    throw new Error(data.message || "Could not fetch Etherscan transactions");
+  }
+
+  const wallets = Array.from(
+    new Set(
+      data.result
+        .filter((tx: any) => {
+          return (
+            tx.to?.toLowerCase() === CONTRACT_ADDRESS.toLowerCase() &&
+            tx.isError === "0"
+          );
+        })
+        .map((tx: any) => tx.from.toLowerCase())
+    )
+  );
+
+  console.log("Unique player wallets:", wallets);
+
+  return wallets as string[];
+}
+
 let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
@@ -192,9 +234,121 @@ app.innerHTML = `
       <button id="challengePlayer">Challenge Player</button>
       <pre id="challengeOutput"></pre>
     </div>
+
+    <section class="card">
+      <h2>🏆 Leaderboard</h2>
+      <button id="loadLeaderboard">Load Top 10 Players</button>
+      <div id="leaderboardOutput"></div>
+    </section>
+
     </section>
   </main>
 `;
+
+type LeaderboardPlayer = {
+  wallet: string;
+  name: string;
+  class: string;
+  level: number;
+};
+
+async function loadLeaderboard() {
+  try {
+    const output =
+      document.querySelector<HTMLDivElement>("#leaderboardOutput")!;
+
+    output.innerHTML = "⏳ Loading leaderboard...";
+
+    const wallets =
+      (await getUniquePlayerWalletsFromEtherscan()) as string[];
+
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
+
+    const players: LeaderboardPlayer[] = [];
+
+    for (const wallet of wallets) {
+      const player = await readContract.players(wallet);
+      const data = formatPlayer(player);
+
+      if (Number(data.level) > 0) {
+        players.push({
+          wallet: String(wallet),
+          name: data.name,
+          class: data.class,
+          level: Number(data.level),
+        });
+      }
+    }
+
+    const topPlayers = players
+      .sort((a, b) => b.level - a.level)
+      .slice(0, 10);
+
+    output.innerHTML = `
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Hero</th>
+            <th>Class</th>
+            <th>Level</th>
+            <th>Wallet</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${topPlayers
+            .map(
+              (player, index) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${player.name}</td>
+                  <td>${player.class}</td>
+                  <td>${player.level}</td>
+                  <td class="wallet-cell">
+                  <code>${player.wallet}</code>
+                  <button
+                    class="copy-wallet-btn"
+                    data-wallet="${player.wallet}"
+                  >
+                    Copy
+                  </button>
+                </td>
+                </tr>
+              `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+
+    document
+    .querySelectorAll<HTMLButtonElement>(".copy-wallet-btn")
+    .forEach((button) => {
+      button.addEventListener("click", async () => {
+        const wallet = button.dataset.wallet;
+
+        if (!wallet) return;
+
+        await navigator.clipboard.writeText(wallet);
+
+        button.textContent = "Copied!";
+
+        setTimeout(() => {
+          button.textContent = "Copy";
+        }, 1200);
+      });
+    });
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
 
 function requireContract() {
   if (!contract || !signer || !connectedAddress) {
@@ -1040,3 +1194,9 @@ document
   });
 
 updateBattlePrice();
+
+getUniquePlayerWalletsFromEtherscan();
+
+document
+  .querySelector("#loadLeaderboard")!
+  .addEventListener("click", loadLeaderboard);
