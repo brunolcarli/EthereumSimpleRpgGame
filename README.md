@@ -1,42 +1,58 @@
 # ⚔️ Simple Battle RPG Frontend
 
-Frontend application for interacting with the **Simple Battle RPG** Solidity smart contract deployed on Ethereum Sepolia.
+A fantasy-themed Web3 RPG frontend built with TypeScript, Vite and ethers.js for interacting with an on-chain Solidity RPG smart contract deployed on Ethereum Sepolia.
 
-This project allows players to connect their wallet, register characters, battle monsters, gain EXP, revive players, and inspect on-chain character data.
+Players can connect wallets, create characters, fight monsters, challenge other players, earn rewards, heal, revive characters and inspect all game data directly from the blockchain.
 
 ---
 
-# 🌐 Live Smart Contract
+# 🌐 Live DApp
 
-Demo DApp on vercel: https://ethereum-simple-rpg-game.vercel.app/
+Demo DApp:
 
+https://ethereum-simple-rpg-game.vercel.app/
+
+---
+
+# 📜 Smart Contract
 
 ## Sepolia Contract Address
 
 ```txt
-0x7E68EF63Ea7Fd44691402002bFD3e28E420cf6F1
+0x494F4a2c19415b74a70cD8DD6927c309CCfb6723
 ```
-
-Solidity smart contract source code: https://github.com/brunolcarli/simpleRPG
-
-## Etherscan
-
-https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
 
 ---
 
-# 🚀 Features
+## Etherscan
+
+https://sepolia.etherscan.io/address/0x494f4a2c19415b74a70cd8dd6927c309ccfb6723
+
+---
+
+## Solidity Source Code
+
+https://github.com/brunolcarli/simpleRPG
+
+---
+
+# ⚔️ Features
 
 - 🔗 Connect EVM wallets
 - 🧙 Register RPG characters
-- ⚔️ Battle monsters on-chain
-- 📜 Real-time battle logs
-- 👾 View enemy list
-- ❤️ Revive dead players
+- ⚔️ PvE battles against monsters
+- 🛡️ PvP battles against other players
+- 📜 Real-time battle logs from Solidity events
+- ❤️ Heal characters
+- ☠️ Revive dead players
+- 👾 View all enemies
 - 🔍 Search any player by wallet address
 - 📈 View your own character stats
-- 💰 ETH-based gameplay mechanics
-- 🎮 Clean RPG-inspired UI
+- 💰 ETH reward mechanics
+- 💥 Critical hit system
+- 🏰 Animated medieval fantasy UI
+- 🐉 Animated dragons and fantasy background
+- 🌩️ Fully on-chain gameplay mechanics
 
 ---
 
@@ -47,6 +63,7 @@ https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
 - ethers.js
 - Solidity
 - Ethereum Sepolia
+- HTML/CSS
 
 ---
 
@@ -54,6 +71,7 @@ https://sepolia.etherscan.io/address/0x7e68ef63ea7fd44691402002bfd3e28e420cf6f1
 
 The frontend supports injected EVM wallets such as:
 
+- OKX Wallet
 - MetaMask
 - Rabby
 - Coinbase Wallet
@@ -62,7 +80,7 @@ The frontend supports injected EVM wallets such as:
 
 ---
 
-# ⚔️ Game Features
+# 🎮 Game Systems
 
 ## Character Classes
 
@@ -74,23 +92,24 @@ The frontend supports injected EVM wallets such as:
 
 ---
 
-## Enemies
+# 👾 Enemies
 
-The game includes several enemies:
-
-| Enemy |
-|---|
-| 👺 Goblin |
-| 🪓 Orc |
-| 💀 Skeleton |
-| 🧟 Zombie |
-| 🐺 Werewolf |
-| 🧝 Dark Elf |
-| 🐉 Dragon |
+| Enemy | Description |
+|---|---|
+| 👺 Goblin | Weak starter enemy |
+| 🪓 Orc | Physical fighter |
+| 💀 Skeleton | Balanced undead |
+| 🧟 Zombie | High HP |
+| 🐺 Werewolf | Fast attacker |
+| 🧝 Dark Elf | Magic enemy |
+| 🦎 Great Lizard | Strong balanced monster |
+| 🪨 Troll | Tank enemy |
+| 🧚 Dark Fairy | Powerful magic enemy |
+| 🐉 Dragon | Endgame boss |
 
 ---
 
-# 💰 ETH Mechanics
+# 💰 ETH Gameplay Mechanics
 
 ## Character Registration
 
@@ -102,10 +121,10 @@ The game includes several enemies:
 
 ## Battle Cost
 
-The battle price scales dynamically with the number of rounds selected.
+Battle costs scale dynamically based on selected rounds.
 
 ```solidity
-battlePrice = pricePerRound * rounds
+battleCost = commonPrice * rounds
 ```
 
 Example:
@@ -118,11 +137,29 @@ Example:
 
 ---
 
-## Revive Cost
+## Player Actions
 
-```solidity
-0.001 ETH
-```
+| Action | Cost |
+|---|---|
+| ❤️ Revive | commonPrice |
+| 🧪 Heal | commonPrice |
+| ⚔️ PvP Challenge | commonPrice × rounds |
+
+---
+
+# 💥 Combat Mechanics
+
+The Solidity contract includes:
+
+- Randomized combat
+- Critical hit probability
+- EXP system
+- Level up system
+- Class-based stat progression
+- ETH drop rewards from monsters
+- PvP combat
+- Player death system
+- Healing and revive mechanics
 
 ---
 
@@ -134,14 +171,30 @@ Example:
 
 ```txt
 ⚔️ Round 0
-Player attacked and caused damage: 12
+Player attacked and caused damage: 14
 
 ⚔️ Round 0
-Monster attacked and caused damage: 6
+Critical hit caused damage: 32
 
 ⚔️ Round 1
+Monster attacked and caused damage: 8
+
+⚔️ Round 2
 Monster defeated
 ```
+
+---
+
+# 🏰 Medieval Fantasy UI
+
+The frontend includes:
+
+- Animated clouds
+- Flying dragons
+- Castle background
+- Forest and mountain scenery
+- Medieval-inspired UI theme
+- Fantasy RPG styling
 
 ---
 
@@ -172,6 +225,14 @@ npm run dev
 
 ---
 
+## Production Build
+
+```bash
+npm run build
+```
+
+---
+
 # 📁 Project Structure
 
 ```txt
@@ -185,17 +246,18 @@ src/
 
 # 🔮 Future Improvements
 
-- 🎨 Animated combat UI
 - 🎵 Sound effects
 - 🗡️ Equipment system
 - 🎒 Inventory system
 - 🪙 ERC20 in-game currency
 - 🖼️ NFT characters
-- 🌎 Multiplayer systems
-- ⚡ PvP arena
+- 🌎 Multiplayer matchmaking
+- ⚡ PvP arena ranking
 - 🐲 Raid bosses
 - 🎲 Chainlink VRF randomness
-- 📱 Mobile responsive improvements
+- 📱 Mobile responsiveness improvements
+- 🧭 Open-world map
+- 🏆 Leaderboards
 
 ---
 
@@ -204,6 +266,8 @@ src/
 This project was created for educational and portfolio purposes.
 
 The randomness system used in the smart contract is pseudo-random and is NOT secure for production-grade blockchain games.
+
+This project is NOT audited.
 
 ---
 
@@ -214,11 +278,13 @@ This project explores:
 - Smart contract integration
 - ethers.js
 - Wallet interaction
-- EVM transactions
+- Ethereum transactions
+- Solidity events
 - Event parsing
 - On-chain game mechanics
-- TypeScript frontend architecture
-- Web3 development
+- Web3 frontend architecture
+- EVM development
+- TypeScript frontend engineering
 
 ---
 
@@ -228,8 +294,8 @@ MIT License
 
 ---
 
-# 👨‍💻 
+# 👨‍💻 Author
 
-Beelzebruno - 2026
+Beelzebruno — 2026
 
-Built as a blockchain and Solidity learning project.
+Built as a Solidity and blockchain learning project.
