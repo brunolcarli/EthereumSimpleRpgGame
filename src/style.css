@@ -443,3 +443,45 @@ pre {
   border-radius: 8px;
   box-shadow: 0 3px 0 #4b270c;
 }
+
+select {
+  appearance: auto;
+  -webkit-appearance: menulist;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+select option {
+  background: #1c120b;
+  color: #ffe9b0;
+}
+
+.card,
+.container,
+main {
+  overflow: visible;
+}
+
+.fantasy-bg,
+.sky,
+.cloud,
+.mountains,
+.castle,
+.forest,
+.dragon {
+  pointer-events: none;
+}
+
+@media (max-width: 820px) {
+  select {
+    font-size: 16px;
+    min-height: 52px;
+    padding: 12px;
+  }
+
+  .card {
+    backdrop-filter: none;
+  }
+}
