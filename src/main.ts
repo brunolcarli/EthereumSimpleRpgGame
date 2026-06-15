@@ -1,9 +1,11 @@
 import { ethers } from "ethers";
+
 import {
   CONTRACT_ADDRESS,
   CONTRACT_ABI,
   SEPOLIA_CHAIN_ID,
   REGISTER_PRICE,
+  CREATE_GUILD_PRICE,
 } from "./contract";
 
 import "./style.css";
@@ -15,6 +17,306 @@ declare global {
   }
 }
 
+function formatGuild(guild: any) {
+  return {
+    id: guild[0].toString(),
+    name: guild[1],
+    guildOwner: guild[2],
+    membersCount: guild[3].toString(),
+    points: guild[4].toString(),
+    exists: guild[5],
+  };
+}
+
+const ACHIEVEMENTS = [
+  { id: 1, name: "Goblin Slayer", enemyId: 1 },
+  { id: 2, name: "Orc Slayer", enemyId: 2 },
+  { id: 3, name: "Skeleton Slayer", enemyId: 3 },
+  { id: 4, name: "Zombie Slayer", enemyId: 4 },
+  { id: 5, name: "Werewolf Slayer", enemyId: 5 },
+  { id: 6, name: "Dark Elf Slayer", enemyId: 6 },
+  { id: 7, name: "Great Lizard Slayer", enemyId: 7 },
+  { id: 8, name: "Troll Slayer", enemyId: 8 },
+  { id: 9, name: "Dark Fairy Slayer", enemyId: 9 },
+  { id: 10, name: "Dragon Slayer", enemyId: 10 },
+  { id: 100, name: "PVP Master", enemyId: null },
+];
+
+async function createGuild() {
+  try {
+    const c = requireContract();
+
+    const name = document.querySelector<HTMLInputElement>("#guildName")!.value;
+
+    if (!name) {
+      alert("Enter a guild name.");
+      return;
+    }
+
+    const tx = await c.createGuild(name, {
+      value: ethers.parseEther(CREATE_GUILD_PRICE),
+    });
+
+    await tx.wait();
+
+    alert("Guild created!");
+
+    await loadGuilds();
+    await loadTopGuilds();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function joinGuild() {
+  try {
+    const c = requireContract();
+
+    const guildId = Number(
+      document.querySelector<HTMLInputElement>("#joinGuildId")!.value
+    );
+
+    if (guildId <= 0) {
+      alert("Invalid guild ID.");
+      return;
+    }
+
+    const tx = await c.joinGuild(guildId);
+    await tx.wait();
+
+    alert("Joined guild!");
+
+    await loadMyPlayer();
+    await loadGuilds();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function leaveGuild() {
+  try {
+    const c = requireContract();
+
+    const tx = await c.leaveGuild();
+    await tx.wait();
+
+    alert("Left guild!");
+
+    await loadMyPlayer();
+    await loadGuilds();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function loadGuilds() {
+  try {
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
+
+    const guilds = await readContract.getGuilds(0, 50);
+
+    const output = document.querySelector<HTMLDivElement>("#guildsOutput")!;
+
+    if (!guilds.length) {
+      output.innerHTML = "<p>No guilds created yet.</p>";
+      return;
+    }
+
+    output.innerHTML = guilds
+      .map((guild: any) => {
+        const data = formatGuild(guild);
+
+        return `
+          <div class="guild-card">
+            <h3>#${data.id} - ${data.name}</h3>
+            <p>👑 Owner: <code>${data.guildOwner}</code></p>
+            <p>👥 Members: ${data.membersCount}</p>
+            <p>🏆 Points: ${data.points}</p>
+          </div>
+        `;
+      })
+      .join("");
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function loadTopGuilds() {
+  console.log("LOAD TOP GUILDS CLICKED");
+  try {
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
+
+    const topGuilds = await readContract.getTopGuilds();
+
+    const output =
+      document.querySelector<HTMLDivElement>("#topGuildsOutput")!;
+
+    let activeGuilds = topGuilds
+      .map((guild: any) => formatGuild(guild))
+      .filter((guild: any) => guild.exists);
+
+    if (!activeGuilds.length) {
+      const allGuilds = await readContract.getGuilds(0, 50);
+
+      activeGuilds = allGuilds
+        .map((guild: any) => formatGuild(guild))
+        .filter((guild: any) => guild.exists)
+        .sort((a: any, b: any) => Number(b.points) - Number(a.points))
+        .slice(0, 5);
+    }
+
+    if (!activeGuilds.length) {
+      output.innerHTML = "<p>No guilds found.</p>";
+      return;
+    }
+
+    output.innerHTML = `
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Guild</th>
+            <th>Members</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${activeGuilds
+            .map(
+              (guild: any, index: number) => `
+                <tr>
+                  <td>${index + 1}</td>
+                  <td>${guild.name}</td>
+                  <td>${guild.membersCount}</td>
+                  <td>${guild.points}</td>
+                </tr>
+              `
+            )
+            .join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function loadAchievements() {
+  try {
+    if (!connectedAddress) {
+      throw new Error("Connect your wallet first.");
+    }
+
+    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+
+    const readContract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      CONTRACT_ABI,
+      readProvider
+    );
+
+    const output =
+      document.querySelector<HTMLDivElement>("#achievementsOutput")!;
+
+    const rows = [];
+
+    for (const achievement of ACHIEVEMENTS) {
+      const claimed = await readContract.hasAchievement(
+        connectedAddress,
+        achievement.id
+      );
+
+      let progress = "0";
+      let requirement = "100";
+
+      if (achievement.enemyId !== null) {
+        progress = (
+          await readContract.monsterSlayeds(
+            connectedAddress,
+            achievement.enemyId
+          )
+        ).toString();
+
+        requirement = (
+          await readContract.achievementRequirement(achievement.enemyId)
+        ).toString();
+      } else {
+        progress = (
+          await readContract.uniquePlayersSlayed(connectedAddress)
+        ).toString();
+
+        requirement = (
+          await readContract.PLAYER_SLAYER_REQUIRED_KILLS()
+        ).toString();
+      }
+
+      rows.push(`
+        <div class="achievement-card">
+          <h3>${claimed ? "✅" : "🎖️"} ${achievement.name}</h3>
+          <p>Progress: ${progress} / ${requirement}</p>
+          <button
+            class="claim-achievement"
+            data-achievement-id="${achievement.id}"
+            ${claimed ? "disabled" : ""}
+          >
+            ${claimed ? "Claimed" : "Claim NFT"}
+          </button>
+        </div>
+      `);
+    }
+
+    output.innerHTML = rows.join("");
+
+    document
+      .querySelectorAll<HTMLButtonElement>(".claim-achievement")
+      .forEach((button) => {
+        button.addEventListener("click", async () => {
+          const achievementId = Number(button.dataset.achievementId);
+
+          await claimAchievement(achievementId);
+        });
+      });
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
+
+async function claimAchievement(achievementId: number) {
+  try {
+    const c = requireContract();
+
+    const tx = await c.claimAchievement(achievementId);
+
+    alert(`Achievement claim TX sent: ${tx.hash}`);
+
+    await tx.wait();
+
+    alert("Achievement NFT claimed!");
+
+    await loadAchievements();
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message);
+  }
+}
 
 async function getUniquePlayerWalletsFromEtherscan(): Promise<string[]> {
   const apiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
@@ -236,9 +538,45 @@ app.innerHTML = `
     </div>
 
     <section class="card">
-      <h2>🏆 Leaderboard</h2>
-      <button id="loadLeaderboard">Load Top 10 Players</button>
+      <h2>🏆 Top Players</h2>
+      <button id="loadLeaderboard">Load Top Players</button>
       <div id="leaderboardOutput"></div>
+    </section>
+
+    <section class="grid guild-grid">
+      <div class="card">
+        <h2>🏰 Guilds</h2>
+
+        <input id="guildName" placeholder="Guild name" />
+
+        <button id="createGuild">
+          Create Guild - ${CREATE_GUILD_PRICE} ETH
+        </button>
+
+        <input id="joinGuildId" type="number" min="1" placeholder="Guild ID" />
+
+        <button id="joinGuild">Join Guild</button>
+        <button id="leaveGuild">Leave Guild</button>
+        <button id="loadGuilds">Load Guilds</button>
+
+        <div id="guildsOutput"></div>
+      </div>
+
+      <div class="card">
+        <h2>🏆 Top Guilds</h2>
+
+        <button id="loadTopGuilds">Load Top Guilds</button>
+
+        <div id="topGuildsOutput"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🎖️ Achievements</h2>
+
+      <button id="loadAchievements">Load My Achievements</button>
+
+      <div id="achievementsOutput"></div>
     </section>
 
     </section>
@@ -349,6 +687,8 @@ async function loadLeaderboard() {
     alert(error.message);
   }
 }
+
+
 
 function requireContract() {
   if (!contract || !signer || !connectedAddress) {
@@ -495,7 +835,7 @@ async function heal() {
     }
 
     const commonPrice =
-      await c.commonPrice();
+      await c.COMMON_PRICE();
 
     const tx = await c.heal(target, {
       value: commonPrice,
@@ -559,7 +899,7 @@ async function challengePlayer() {
 
     output.textContent = "⏳ Sending PvP challenge...\n";
 
-    const commonPrice = await c.commonPrice();
+    const commonPrice = await c.COMMON_PRICE();
     const battleCost = commonPrice * BigInt(rounds);
 
     const tx = await c.challengePlayer(target, rounds, {
@@ -840,7 +1180,7 @@ async function updateBattlePrice() {
       document.querySelector<HTMLInputElement>("#battleRounds")!.value || "0"
     );
 
-    const commonPrice = await readContract.commonPrice();
+    const commonPrice = await readContract.COMMON_PRICE();
     const totalWei = commonPrice * BigInt(rounds);
 
     document.querySelector("#battlePrice")!.textContent =
@@ -867,7 +1207,7 @@ async function battle() {
 
     output.textContent = "⏳ Sending battle transaction...\n";
 
-    const commonPrice = await c.commonPrice();
+    const commonPrice = await c.COMMON_PRICE();
     const battleCost = commonPrice * BigInt(rounds);
 
     const tx = await c.battle(enemyId, rounds, {
@@ -948,7 +1288,7 @@ async function revive() {
       return;
     }
 
-    const commonPrice = await c.commonPrice();
+    const commonPrice = await c.COMMON_PRICE();
 
     const tx = await c.revive(target, {
       value: commonPrice,
@@ -1193,9 +1533,33 @@ document
     }
   });
 
+document
+  .querySelector("#createGuild")!
+  .addEventListener("click", createGuild);
+
+document
+  .querySelector("#joinGuild")!
+  .addEventListener("click", joinGuild);
+
+document
+  .querySelector("#leaveGuild")!
+  .addEventListener("click", leaveGuild);
+
+document
+  .querySelector("#loadGuilds")!
+  .addEventListener("click", loadGuilds);
+
+document
+  .querySelector("#loadTopGuilds")!
+  .addEventListener("click", loadTopGuilds);
+
+document
+  .querySelector("#loadAchievements")!
+  .addEventListener("click", loadAchievements);
+
 updateBattlePrice();
 
-getUniquePlayerWalletsFromEtherscan();
+// getUniquePlayerWalletsFromEtherscan();
 
 document
   .querySelector("#loadLeaderboard")!
