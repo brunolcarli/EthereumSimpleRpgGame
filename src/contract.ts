@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0xf0a4199e13516ade0e090b8847a06a114264136d";
+export const CONTRACT_ADDRESS = "0xce7db8f0442fa80c0fab9799e069a94fa477089d";
 
 export const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
@@ -40,6 +40,8 @@ export const CONTRACT_ABI = [
   "function CREATE_GUILD_PRICE() view returns (uint256)",
   "function PLAYER_SLAYER() view returns (uint256)",
   "function PLAYER_SLAYER_REQUIRED_KILLS() view returns (uint256)",
+  "function MAX_PVP_LEVEL_DIFFERENCE() view returns (uint256)",
+  "function MAX_GUILD_POINTS_PER_KILL() view returns (uint256)",
 
   // Guild state
   "function guilds(uint256) view returns (uint256 id, string name, address guildOwner, uint256 membersCount, uint256 points, bool exists)",
