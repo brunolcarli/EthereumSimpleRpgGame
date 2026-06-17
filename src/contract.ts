@@ -6,6 +6,8 @@ export const REGISTER_PRICE = "0.0001";
 export const COMMON_PRICE = "0.001";
 export const CREATE_GUILD_PRICE = "0.01";
 
+export const NFT_METADATA_BASE = "https://gateway.pinata.cloud/ipfs/bafybeihebr72fet5ccpp5qrxwhxo3jimxb4hshffk6b6w3kej35oe4xtbu/";
+
 export const CONTRACT_ABI = [
   // Player actions
   "function registerPlayer(string _name, uint8 _classId) payable",

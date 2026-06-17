@@ -6,6 +6,7 @@ import {
   SEPOLIA_CHAIN_ID,
   REGISTER_PRICE,
   CREATE_GUILD_PRICE,
+  NFT_METADATA_BASE
 } from "./contract";
 
 import "./style.css";
@@ -267,10 +268,35 @@ async function loadAchievements() {
         ).toString();
       }
 
+      let imageHtml = "";
+
+      if (claimed) {
+        const metadata = await fetch(
+          `${NFT_METADATA_BASE}${achievement.id}.json`
+        ).then((r) => r.json());
+
+        const imageUrl = metadata.image.replace(
+          "ipfs://",
+          "https://gateway.pinata.cloud/ipfs/"
+        );
+
+        imageHtml = `
+          <img
+            src="${imageUrl}"
+            alt="${achievement.name}"
+            class="achievement-image"
+          />
+        `;
+      }
+
       rows.push(`
         <div class="achievement-card">
           <h3>${claimed ? "✅" : "🎖️"} ${achievement.name}</h3>
+
+          ${imageHtml}
+
           <p>Progress: ${progress} / ${requirement}</p>
+
           <button
             class="claim-achievement"
             data-achievement-id="${achievement.id}"
@@ -689,7 +715,6 @@ async function loadLeaderboard() {
 }
 
 
-
 function requireContract() {
   if (!contract || !signer || !connectedAddress) {
     throw new Error(
@@ -941,7 +966,7 @@ async function challengePlayer() {
 
     output.textContent += battleLogs.length
       ? battleLogs.join("\n")
-      : "No battle logs found.";
+      : "No battle logs found. Transaction has failed and enemy has fled!";
 
     await loadMyPlayer();
   } catch (error: any) {
@@ -1166,6 +1191,7 @@ async function loadEnemies() {
     alert(error.message);
   }
 }
+
 async function updateBattlePrice() {
   try {
     const readProvider = new ethers.JsonRpcProvider(READ_RPC);
@@ -1189,7 +1215,6 @@ async function updateBattlePrice() {
     console.error(error);
   }
 }
-
 
 async function battle() {
   try {
