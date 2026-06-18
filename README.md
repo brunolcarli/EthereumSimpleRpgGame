@@ -21,6 +21,7 @@ https://ethereum-simple-rpg-game.vercel.app/
 
 - Ethereum Sepolia
 - Arbitrum Sepolia
+- Arbitrum One
 
 ## Etherscan
 
@@ -28,15 +29,18 @@ https://sepolia.etherscan.io/address/0xce7db8f0442fa80c0fab9799e069a94fa477089d
 
 https://sepolia.arbiscan.io/address/0xaf6e5c828cca5cabca85733bc45e318c8bc83141
 
-
+https://arbiscan.io/address/0x39a85c7d3db291da733b9d085b3de8f4f425eb5c
 
 ### Contracts
 
 Ethereum Sepolia
-0xce7db8f0442fa80c0fab9799e069a94fa477089d
+`0xce7db8f0442fa80c0fab9799e069a94fa477089d`
 
 Arbitrum Sepolia
-0xaf6e5c828cca5cabca85733bc45e318c8bc83141
+`0xaf6e5c828cca5cabca85733bc45e318c8bc83141`
+
+Arbitrum One
+`0x39a85C7d3dB291DA733B9d085B3DE8F4F425Eb5c`
 
 ## Solidity Source Code
 
@@ -351,13 +355,17 @@ src/
 
 # ⚠️ Disclaimer
 
-This project was created for educational and portfolio purposes.
+This project was developed as a learning project focused on Solidity, Foundry, smart contract architecture, and Web3 frontend development.
 
-The randomness system used in the smart contract is pseudo-random and is NOT secure for production-grade blockchain games.
+The contracts have been deployed to public blockchain networks, including Arbitrum One Mainnet. However, the project is experimental in nature and should not be considered production-ready.
 
-This project is NOT audited.
+The randomness system currently relies on pseudo-random blockchain data and is not suitable for applications requiring provably fair randomness.
 
-For production deployments, a verifiable randomness solution such as Chainlink VRF should be used.
+The smart contracts have not been audited and may contain bugs, vulnerabilities, or unintended behaviors.
+
+Users should interact with the project at their own risk and avoid depositing significant amounts of funds.
+
+For production-grade deployments, additional security reviews, extensive testing, and verifiable randomness solutions such as Chainlink VRF would be recommended.
 
 ---
 

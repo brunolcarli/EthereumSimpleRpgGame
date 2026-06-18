@@ -15,8 +15,16 @@ export const NETWORKS = {
     rpcUrl: "https://arbitrum-sepolia-rpc.publicnode.com",
     explorer: "https://sepolia.arbiscan.io",
   },
+  arbitrumOne: {
+    name: "Arbitrum One",
+    chainId: "0xa4b1",
+    chainIdDecimal: 42161,
+    contractAddress: "0x39a85C7d3dB291DA733B9d085B3DE8F4F425Eb5c",
+    rpcUrl: "https://arb1.arbitrum.io/rpc",
+    explorer: "https://arbiscan.io",
+  },
 } as const;
-// export const SEPOLIA_CHAIN_ID = "0xaa36a7";
+
 
 export const REGISTER_PRICE = "0.0001";
 export const COMMON_PRICE = "0.001";

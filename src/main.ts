@@ -400,17 +400,17 @@ let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
 
-// const READ_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
   <main class="container">
 
-  <select id="networkSelect">
-    <option value="ethereumSepolia">Ethereum Sepolia</option>
-    <option value="arbitrumSepolia">Arbitrum Sepolia</option>
-  </select>
+    <select id="networkSelect">
+      <option value="ethereumSepolia">Ethereum Sepolia (Testnet)</option>
+      <option value="arbitrumSepolia">Arbitrum Sepolia (Testnet)</option>
+      <option value="arbitrumOne">Arbitrum One (Mainnet)</option>
+    </select>
 
     <div class="fantasy-bg">
       <div class="sky"></div>
@@ -423,8 +423,10 @@ app.innerHTML = `
       <div class="dragon dragon-2">🐲</div>
     </div>
 
-    <h1>⚔️ Simple Battle RPG</h1>
-    <p class="subtitle">Sepolia On-chain RPG powered by Solidity</p>
+    <h1>⚔️ Chainbound RPG</h1>
+    <p class="subtitle">
+      Multi-Chain PvE & PvP RPG powered by Solidity
+    </p>
 
     <section class="card">
       <h2>Wallet</h2>
@@ -963,10 +965,11 @@ async function challengePlayer() {
       value: battleCost,
     });
 
-    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
-    output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
-
     const selectedNetwork = getSelectedNetwork();
+
+    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
+    output.textContent += `⏳ Waiting confirmation from ${selectedNetwork.name}...\n\n`;
+
 
     const readProvider =
       new ethers.JsonRpcProvider(
@@ -993,7 +996,7 @@ async function challengePlayer() {
 
         if (parsed?.name === "battleLog") {
           battleLogs.push(
-            `⚔️ Round ${parsed.args[0].toString()}\n${parsed.args[1]} ${parsed.args[2].toString()}\n`
+            `⚔️ Round ${(parseInt(parsed.args[0].toString())+1).toString()}\n${parsed.args[1]} ${parsed.args[2].toString()}\n`
           );
         }
       } catch {
@@ -1275,10 +1278,11 @@ async function battle() {
       value: battleCost,
     });
 
-    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
-    output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
-
     const selectedNetwork = getSelectedNetwork();
+
+    output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
+    output.textContent += `⏳ Waiting confirmation from ${selectedNetwork.name}...\n\n`;
+
 
     const readProvider =
       new ethers.JsonRpcProvider(
@@ -1314,7 +1318,7 @@ async function battle() {
         console.log("Parsed log:", parsed);
 
         if (parsed?.name === "battleLog") {
-          const round = parsed.args[0].toString();
+          const round = (parseInt(parsed.args[0].toString())+1).toString();
           const message = parsed.args[1];
           const value = parsed.args[2].toString();
 
@@ -1331,7 +1335,7 @@ async function battle() {
 
     output.textContent += battleLogs.length
       ? battleLogs.join("\n")
-      : "No battle logs found.";
+      : "No battle logs found. Transaction as failed and the enemy has fled.";
 
     await loadMyPlayer();
   } catch (error: any) {
