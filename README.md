@@ -16,15 +16,27 @@ https://ethereum-simple-rpg-game.vercel.app/
 
 # 📜 Smart Contract
 
-## Sepolia Contract Address
 
-```txt
-0xce7db8f0442fa80c0fab9799e069a94fa477089d
-```
+## Supported Networks
+
+- Ethereum Sepolia
+- Arbitrum Sepolia
 
 ## Etherscan
 
 https://sepolia.etherscan.io/address/0xce7db8f0442fa80c0fab9799e069a94fa477089d
+
+https://sepolia.arbiscan.io/address/0xaf6e5c828cca5cabca85733bc45e318c8bc83141
+
+
+
+### Contracts
+
+Ethereum Sepolia
+0xce7db8f0442fa80c0fab9799e069a94fa477089d
+
+Arbitrum Sepolia
+0xaf6e5c828cca5cabca85733bc45e318c8bc83141
 
 ## Solidity Source Code
 
