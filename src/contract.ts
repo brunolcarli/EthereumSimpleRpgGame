@@ -1,6 +1,22 @@
-export const CONTRACT_ADDRESS = "0xce7db8f0442fa80c0fab9799e069a94fa477089d";
-
-export const SEPOLIA_CHAIN_ID = "0xaa36a7";
+export const NETWORKS = {
+  ethereumSepolia: {
+    name: "Ethereum Sepolia",
+    chainId: "0xaa36a7",
+    chainIdDecimal: 11155111,
+    contractAddress: "0xce7db8f0442fa80c0fab9799e069a94fa477089d",
+    rpcUrl: "https://ethereum-sepolia-rpc.publicnode.com",
+    explorer: "https://sepolia.etherscan.io",
+  },
+  arbitrumSepolia: {
+    name: "Arbitrum Sepolia",
+    chainId: "0x66eee",
+    chainIdDecimal: 421614,
+    contractAddress: "0xaf6e5c828cca5cabca85733bc45e318c8bc83141",
+    rpcUrl: "https://arbitrum-sepolia-rpc.publicnode.com",
+    explorer: "https://sepolia.arbiscan.io",
+  },
+} as const;
+// export const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
 export const REGISTER_PRICE = "0.0001";
 export const COMMON_PRICE = "0.001";

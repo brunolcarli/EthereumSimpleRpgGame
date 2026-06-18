@@ -1,9 +1,8 @@
 import { ethers } from "ethers";
 
 import {
-  CONTRACT_ADDRESS,
+  NETWORKS,
   CONTRACT_ABI,
-  SEPOLIA_CHAIN_ID,
   REGISTER_PRICE,
   CREATE_GUILD_PRICE,
   NFT_METADATA_BASE
@@ -42,6 +41,14 @@ const ACHIEVEMENTS = [
   { id: 10, name: "Dragon Slayer", enemyId: 10 },
   { id: 100, name: "PVP Master", enemyId: null },
 ];
+
+function getSelectedNetwork() {
+  return NETWORKS[
+    document
+      .querySelector<HTMLSelectElement>("#networkSelect")!
+      .value as keyof typeof NETWORKS
+  ];
+}
 
 async function createGuild() {
   try {
@@ -115,13 +122,14 @@ async function leaveGuild() {
 
 async function loadGuilds() {
   try {
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const guilds = await readContract.getGuilds(0, 50);
 
@@ -155,13 +163,14 @@ async function loadGuilds() {
 async function loadTopGuilds() {
   console.log("LOAD TOP GUILDS CLICKED");
   try {
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const topGuilds = await readContract.getTopGuilds();
 
@@ -225,13 +234,14 @@ async function loadAchievements() {
       throw new Error("Connect your wallet first.");
     }
 
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const output =
       document.querySelector<HTMLDivElement>("#achievementsOutput")!;
@@ -346,13 +356,14 @@ async function claimAchievement(achievementId: number) {
 
 async function getUniquePlayerWalletsFromEtherscan(): Promise<string[]> {
   const apiKey = import.meta.env.VITE_ETHERSCAN_API_KEY;
+  const selectedNetwork = getSelectedNetwork();
 
   const url =
     `https://api.etherscan.io/v2/api` +
-    `?chainid=11155111` +
+    `?chainid=${selectedNetwork.chainIdDecimal}` +
     `&module=account` +
     `&action=txlist` +
-    `&address=${CONTRACT_ADDRESS}` +
+    `&address=${selectedNetwork.contractAddress}` +
     `&startblock=0` +
     `&endblock=99999999` +
     `&page=1` +
@@ -372,7 +383,7 @@ async function getUniquePlayerWalletsFromEtherscan(): Promise<string[]> {
       data.result
         .filter((tx: any) => {
           return (
-            tx.to?.toLowerCase() === CONTRACT_ADDRESS.toLowerCase() &&
+            tx.to?.toLowerCase() === selectedNetwork.contractAddress.toLowerCase() &&
             tx.isError === "0"
           );
         })
@@ -389,12 +400,17 @@ let signer: ethers.JsonRpcSigner | null = null;
 let contract: ethers.Contract | null = null;
 let connectedAddress: string | null = null;
 
-const READ_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+// const READ_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
   <main class="container">
+
+  <select id="networkSelect">
+    <option value="ethereumSepolia">Ethereum Sepolia</option>
+    <option value="arbitrumSepolia">Arbitrum Sepolia</option>
+  </select>
 
     <div class="fantasy-bg">
       <div class="sky"></div>
@@ -626,13 +642,14 @@ async function loadLeaderboard() {
     const wallets =
       (await getUniquePlayerWalletsFromEtherscan()) as string[];
 
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const players: LeaderboardPlayer[] = [];
 
@@ -781,6 +798,8 @@ function getInjectedProvider() {
 
 async function connectWallet() {
   try {
+    const selectedNetwork = getSelectedNetwork();
+
     const injectedProvider =
       getInjectedProvider();
 
@@ -797,7 +816,9 @@ async function connectWallet() {
     try {
       await provider.send(
         "wallet_switchEthereumChain",
-        [{ chainId: SEPOLIA_CHAIN_ID }]
+        [{
+          chainId: selectedNetwork.chainId,
+        }]
       );
     } catch (switchError: any) {
       if (switchError.code === 4902) {
@@ -806,18 +827,23 @@ async function connectWallet() {
           [
             {
               chainId:
-                SEPOLIA_CHAIN_ID,
-              chainName: "Sepolia",
+                selectedNetwork.chainId,
+
+              chainName:
+                selectedNetwork.name,
+
               nativeCurrency: {
-                name: "Sepolia ETH",
+                name: "ETH",
                 symbol: "ETH",
                 decimals: 18,
               },
+
               rpcUrls: [
-                "https://rpc.sepolia.org",
+                selectedNetwork.rpcUrl,
               ],
+
               blockExplorerUrls: [
-                "https://sepolia.etherscan.io",
+                selectedNetwork.explorer,
               ],
             },
           ]
@@ -831,7 +857,7 @@ async function connectWallet() {
       await signer.getAddress();
 
     contract = new ethers.Contract(
-      CONTRACT_ADDRESS,
+      selectedNetwork.contractAddress,
       CONTRACT_ABI,
       signer
     );
@@ -839,7 +865,9 @@ async function connectWallet() {
     document.querySelector(
       "#walletStatus"
     )!.textContent =
-      `Connected: ${connectedAddress} | Contract: ${CONTRACT_ADDRESS}`;
+      `Connected: ${connectedAddress}
+       | Network: ${selectedNetwork.name}
+       | Contract: ${selectedNetwork.contractAddress}`;
   } catch (error) {
     console.error(error);
   }
@@ -871,8 +899,12 @@ async function heal() {
     )!.textContent =
       `⏳ Heal TX sent: ${tx.hash}`;
 
+    const selectedNetwork = getSelectedNetwork();
+
     const readProvider =
-      new ethers.JsonRpcProvider(READ_RPC);
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
 
     const receipt =
       await readProvider.waitForTransaction(
@@ -934,7 +966,12 @@ async function challengePlayer() {
     output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
     output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
 
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
+
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
     const receipt = await readProvider.waitForTransaction(tx.hash, 1, 120000);
 
     if (!receipt) {
@@ -1056,17 +1093,14 @@ async function loadMyPlayer() {
       );
     }
 
+    const selectedNetwork = getSelectedNetwork();
+
     const readProvider =
       new ethers.JsonRpcProvider(
-        READ_RPC
+        selectedNetwork.rpcUrl
       );
 
-    const readContract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        readProvider
-      );
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const player =
       await readContract.players(
@@ -1135,13 +1169,14 @@ async function loadMyPlayer() {
 
 async function loadEnemies() {
   try {
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const enemyEmojiMap: Record<string, string> = {
       Goblin: "👺",
@@ -1194,13 +1229,14 @@ async function loadEnemies() {
 
 async function updateBattlePrice() {
   try {
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
 
-    const readContract = new ethers.Contract(
-      CONTRACT_ADDRESS,
-      CONTRACT_ABI,
-      readProvider
-    );
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
+
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const rounds = Number(
       document.querySelector<HTMLInputElement>("#battleRounds")!.value || "0"
@@ -1242,7 +1278,12 @@ async function battle() {
     output.textContent += `📦 TX Sent: ${tx.hash}\n\n`;
     output.textContent += "⏳ Waiting confirmation from Sepolia RPC...\n\n";
 
-    const readProvider = new ethers.JsonRpcProvider(READ_RPC);
+    const selectedNetwork = getSelectedNetwork();
+
+    const readProvider =
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
 
     const receipt = await readProvider.waitForTransaction(tx.hash, 1, 120000);
 
@@ -1324,8 +1365,12 @@ async function revive() {
     )!.textContent =
       `⏳ Revive TX sent: ${tx.hash}`;
 
+    const selectedNetwork = getSelectedNetwork();
+
     const readProvider =
-      new ethers.JsonRpcProvider(READ_RPC);
+      new ethers.JsonRpcProvider(
+        selectedNetwork.rpcUrl
+      );
 
     const receipt =
       await readProvider.waitForTransaction(
@@ -1368,17 +1413,14 @@ async function searchPlayer() {
       return;
     }
 
+    const selectedNetwork = getSelectedNetwork();
+
     const readProvider =
       new ethers.JsonRpcProvider(
-        READ_RPC
+        selectedNetwork.rpcUrl
       );
 
-    const readContract =
-      new ethers.Contract(
-        CONTRACT_ADDRESS,
-        CONTRACT_ABI,
-        readProvider
-      );
+    const readContract = new ethers.Contract( selectedNetwork.contractAddress, CONTRACT_ABI, readProvider );
 
     const player =
       await readContract.players(
